@@ -4,7 +4,7 @@ A fast, good-looking Windows app that finds available Discord usernames. Pick th
 (length, characters, real words, prefixes and suffixes, a minimum rating), press **Start**, and Pro Tool
 checks them for you, lists the free ones, rates them out of 10 and can ping you on Discord when it finds one.
 
-<!-- screenshot: scan -->
+![Scan tab during a scan](docs/screenshots/scan.png)
 
 **[Download the latest version](https://github.com/hoqf/pro-tool-updates/releases/latest)** - get
 `ProToolV2.exe`, double-click it, done. It updates itself from then on.
@@ -44,7 +44,7 @@ checks them for you, lists the free ones, rates them out of 10 and can ping you 
 - **Presets**: save your search settings and load them again later.
 
 ### Choosing what names to make
-<!-- screenshot: search -->
+![Search page](docs/screenshots/search.png)
 - **Length** from 2 to 32 characters, **shortest first** or **random order**.
 - **Characters**: letters, digits, underscore and period - any mix.
 - **Must contain** some text anywhere, at the start or at the end; **start with / end with**; **skip names containing** words you don't want.
@@ -54,7 +54,7 @@ checks them for you, lists the free ones, rates them out of 10 and can ping you 
 - **Word builder**: combines base words with **prefixes** (neo, pro, ultra...), **suffixes** (er, ly, ify...)
   and **either-side** parts (x, z, o), e.g. *nova* -> *neonova, novaly, neonovaly, xnova*. Names are picked
   **at random** from every combination, so each scan goes in a new order.
-  <!-- screenshot: word-builder -->
+  ![Word builder](docs/screenshots/word-builder.png)
 - **Only make names rated** from X to Y out of 10 - for example *10 to 10* for only perfect names.
 
 ### Name ratings
@@ -71,35 +71,36 @@ Every name gets a **rating out of 10** (hover it to see why):
 Examples: *zed* 10, *nova* 9, *shadow* 8, *xkcd* 7, *strngth* 6.
 
 ### Results
-<!-- screenshot: results -->
+![Results page with ratings](docs/screenshots/results.png)
 - **Available** names with their rating, a **favourite** star and one-click **copy** / **copy all**.
 - **Results page** with every available name ever found, a search box, **filter by rating** (10, 9+, 8+...)
   and **download as .txt**.
 - **Windows notification** and a sound when a name is found (both optional).
 
 ### Accounts and token alerts
-<!-- screenshot: accounts -->
+![Saved accounts](docs/screenshots/accounts.png)
 - Save up to **50 accounts**; tokens are **encrypted with Windows** (DPAPI) and never shown again in full.
 - **Switch account mid-scan**, cycle to the next one, or **auto-switch** when one is rate limited.
 - **Test** one or **all** accounts, and **import** a .txt of tokens.
 - **Token alerts**: when a token stops working (rejected, expired or the account is locked), Pro Tool shows a
   **yellow alert**, **highlights that token in yellow** in the list, adds a count in the menu and sends a
   Windows notification - even if the app is hidden.
-  <!-- screenshot: token-alert -->
+  ![Token alert with the token highlighted in yellow](docs/screenshots/token-alert.png)
 
 ### Discord webhook
-<!-- screenshot: webhook -->
-- Get a message in your own Discord server **the moment a name is found** - fully customisable text,
-  embed title, description, colour and footer, with a **Test** button. Optional "scan finished" message.
+![Webhook page](docs/screenshots/webhook.png)
+- Get a message in your own Discord server **the moment a name is found**.
+- Optional **summary when a scan ends**, and a **Send test** button to check it works.
+- The webhook URL is stored encrypted, like your tokens.
 
 ### Test mode
-<!-- screenshot: test-mode -->
+![Test mode with rated test names](docs/screenshots/test-mode.png)
 - **Generate names without a token**: nothing is sent to Discord and nothing is saved.
 - Every generated name appears on the **Scan** tab in **Test names**, **rated out of 10**, with the
   average rating, **Newest / Best rated** order and copy all. Great for tuning your search before a real scan.
 
 ### Automatic updates
-<!-- screenshot: update -->
+![Update available prompt](docs/screenshots/update.png)
 - Pro Tool checks for a new version when it opens and asks **Update now / Later**.
 - Updating takes a few seconds; settings, accounts and results are kept.
 - Every update is **digitally signed** - the app refuses anything that isn't signed by the publisher, so a
