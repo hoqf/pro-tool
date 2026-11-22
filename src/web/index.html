@@ -576,7 +576,7 @@ textarea{min-height:64px}
 @media (max-width:1180px){.presets .row{flex-wrap:wrap}}
 #acctShowFailed.on{border-color:var(--blue);background:var(--accent-soft)}
 .res-sort{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)} .res-sort select{width:auto;padding:6px 10px}
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;align-items:start}
 .cat-card{display:flex;flex-direction:column;gap:9px;min-height:94px;text-align:left;padding:16px;cursor:pointer;color:inherit;font:inherit;
   background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s,background .15s}
 .cat-card:hover{background:var(--chip-h);border-color:var(--blue)} .cat-card:active{transform:translateY(1px)}
@@ -585,6 +585,18 @@ textarea{min-height:64px}
 .cat-card.active{border-color:var(--blue)} .cat-card.active .cat-sum{color:var(--text)}
 .cat-modal{max-width:520px} .cat-modal .note{margin-top:12px}
 .est-panel{margin-bottom:14px}
+.cat-presets-card{grid-column:span 2;cursor:default;gap:10px}
+.cat-presets-card:hover{background:var(--bg1);border-color:var(--border)} .cat-presets-card:active{transform:none}
+.preset-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.preset-controls select{flex:1 1 150px;min-width:0} .preset-controls input{flex:1 1 130px;min-width:0}
+@media (max-width:460px){.cat-presets-card{grid-column:span 1}}
+/* pop-up windows: quick 0.1s fade-in with a blurred backdrop */
+.modal[open],.palette[open]{animation:popIn .1s ease-out both}
+.modal[open]::backdrop,.palette[open]::backdrop{animation:popBg .1s ease-out both}
+.palette::backdrop{background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+@keyframes popIn{from{opacity:0;transform:translateY(6px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes popBg{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.modal[open],.palette[open],.modal[open]::backdrop,.palette[open]::backdrop{animation-duration:.001s}}
 </style>
 </head>
 <body>
@@ -728,6 +740,16 @@ textarea{min-height:64px}
         <div class="examples" id="examples"></div>
       </div>
       <div class="cat-grid">
+        <div class="cat-card cat-presets-card" id="presetsCard">
+          <span class="cat-title">Presets</span>
+          <div class="preset-controls">
+            <select id="presetSel" aria-label="Saved searches"></select>
+            <button class="btn sm" id="presetLoad">Load</button>
+            <button class="btn sm danger" id="presetDel">Delete</button>
+            <input type="text" id="presetName" maxlength="40" placeholder="Save current as…">
+            <button class="btn sm primary" id="presetSave">Save</button>
+          </div>
+        </div>
         <button type="button" class="cat-card" data-cat="length"><span class="cat-title">Length</span><span class="cat-sum" id="sum-length"></span></button>
         <button type="button" class="cat-card" data-cat="chars"><span class="cat-title">Characters</span><span class="cat-sum" id="sum-chars"></span></button>
         <button type="button" class="cat-card" data-cat="must"><span class="cat-title">Must contain</span><span class="cat-sum" id="sum-must"></span></button>
@@ -737,7 +759,6 @@ textarea{min-height:64px}
         <button type="button" class="cat-card" data-cat="speed"><span class="cat-title">Speed</span><span class="cat-sum" id="sum-speed"></span></button>
         <button type="button" class="cat-card" data-cat="stopping"><span class="cat-title">Stopping</span><span class="cat-sum" id="sum-stopping"></span></button>
         <button type="button" class="cat-card" data-cat="list"><span class="cat-title">Check your own list</span><span class="cat-sum" id="sum-list"></span></button>
-        <button type="button" class="cat-card" data-cat="presets"><span class="cat-title">Presets</span><span class="cat-sum" id="sum-presets"></span></button>
       </div>
 
       <dialog class="modal glass cat-modal" id="cat-length"><div class="modal-h"><h2>Length</h2><button class="x" data-close aria-label="Close">&times;</button></div>
@@ -833,14 +854,6 @@ textarea{min-height:64px}
         </div>
       </dialog>
 
-      <dialog class="modal glass cat-modal" id="cat-presets"><div class="modal-h"><h2>Presets</h2><button class="x" data-close aria-label="Close">&times;</button></div>
-        <label class="field"><span>Saved searches</span><select id="presetSel"></select></label>
-        <div class="btns" style="margin-top:10px"><button class="btn sm" id="presetLoad">Load</button><button class="btn sm danger" id="presetDel">Delete</button></div>
-        <label class="field" style="margin-top:14px"><span>Save the current settings as</span>
-          <div class="row" style="flex-wrap:nowrap;margin-top:4px"><input type="text" id="presetName" maxlength="40" placeholder="Name this search…" style="flex:1 1 auto;min-width:0">
-            <button class="btn sm primary" id="presetSave">Save</button></div></label>
-        <p class="note">Presets remember only the settings on this page.</p>
-      </dialog>
     </section>
 
     <!-- ACCOUNTS -->
