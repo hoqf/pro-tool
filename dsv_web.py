@@ -42,7 +42,7 @@ HERE = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", 
 # ------------------------------------------------------------------ updates
 # release.py sets these. Updates are signed: the app only installs an update whose signature matches
 # UPDATE_PUBKEY, so nobody but the holder of the private signing key can push one.
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 UPDATE_REPO = "hoqf/pro-tool-updates"
 UPDATE_PUBKEY = "UIyHAE1nXAPFRJCc8ZkIEe3WjiwJoxXZoIqKpOpk8Ww="
 UPDATE_ASSET = "ProToolV2.exe"
