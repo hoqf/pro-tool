@@ -108,6 +108,8 @@ Examples: *zed* 10, *nova* 9, *shadow* 8, *xkcd* 7, *strngth* 6.
 
 ### Discord webhook
 - Get a message in your own Discord server **the moment a name is found**.
+- **Live scoreboard**: one message in your channel that **updates itself every few seconds** during a scan -
+  progress bar, counts, speed, ETA, the newest names with their ratings and any token alerts.
 - Optional **summary when a scan ends**, and a **Send test** button to check it works.
 - The webhook URL is stored encrypted, like your tokens.
 

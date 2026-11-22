@@ -846,6 +846,9 @@ footer{background:#050505}
         <label class="field"><span>Webhook URL</span><input type="url" id="hookUrl" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></label>
         <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="hook_on"> Message me for every available name</label>
         <label class="tog"><input type="checkbox" data-k="hook_done"> Send a summary when a scan ends</label>
+        <label class="tog"><input type="checkbox" data-k="hook_live"> Keep a live scoreboard message (updates every few seconds)</label>
+        <p class="note" style="margin:4px 0 0 46px">When a scan starts, one message with the progress, counts, newest names and their
+          ratings appears in the webhook's channel and keeps updating until the scan ends. Not sent in test mode.</p>
         <div class="btns" style="margin-top:12px"><button class="btn sm primary" id="hookSave">Save</button><button class="btn sm" id="hookTest">Send test</button></div>
         <div class="msg" id="hookMsg"></div>
       </div>

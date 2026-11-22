@@ -76,6 +76,7 @@ DEFAULTS = {
     "mode": "random", "place": "any", "skip_known": True, "log_taken": True,
     "dict_lang": "", "dict_file": "", "dict_skip_caps": True,
     "hook_on": False, "hook_done": False, "hook_name": "",
+    "hook_live": False,              # keep one scoreboard message in the webhook's channel updating during a scan
     "hook_content": core.DEFAULT_HOOK["content"], "hook_embed": core.DEFAULT_HOOK["embed"],
     "hook_title": core.DEFAULT_HOOK["title"], "hook_desc": core.DEFAULT_HOOK["desc"],
     "hook_footer": core.DEFAULT_HOOK["footer"], "hook_color": core.DEFAULT_HOOK["color"],
@@ -659,6 +660,107 @@ def cleanup_old_exe():
             except OSError:
                 time.sleep(1)
     threading.Thread(target=go, daemon=True).start()
+
+
+# ------------------------------------------------------------------ live scoreboard (through the webhook)
+def scoreboard_embed(st):
+    """One Discord embed with how the scan is going - the live scoreboard message."""
+    running, paused = st.get("running"), st.get("paused")
+    stats, total = st.get("stats") or {}, st.get("total") or 0
+    checked = stats.get("checked", 0)
+    if running and paused:
+        colour, head = 0xE0B400, "\u23f8\ufe0f Paused"
+    elif running:
+        colour, head = 0x3BA55C, "\U0001f7e2 Scanning"
+    else:
+        colour, head = 0x4F545C, "\u26aa " + (st.get("status") or "Finished")
+    lines = [f"**{head}**"]
+    if total:
+        frac = max(0.0, min(1.0, checked / total))
+        filled = round(frac * 18)
+        lines.append(f"`{'\u25b0' * filled}{'\u25b1' * (18 - filled)}` {frac * 100:.1f}%  \u00b7  {checked:,} / {total:,}")
+    extra = []
+    if st.get("elapsed"):
+        extra.append("\u23f1\ufe0f " + core.fmt_duration(st["elapsed"]))
+    if running and st.get("eta"):
+        extra.append("ETA ~" + core.fmt_duration(st["eta"]))
+    if running and st.get("pace"):
+        extra.append(f"{st['pace']:.2f} s/check")
+    if st.get("account"):
+        extra.append("\U0001f464 " + st["account"])
+    if extra:
+        lines.append("  \u00b7  ".join(extra))
+    fields = [{"name": k, "value": f"{stats.get(v, 0):,}", "inline": True}
+              for k, v in (("Checked", "checked"), ("Available", "available"), ("Taken", "taken"), ("Errors", "errors"))]
+    found = list(st.get("found") or [])[-8:][::-1]
+    if found:
+        fields.append({"name": "Latest available", "inline": False,
+                       "value": "\n".join(f"`{n}` \u00b7 **{name_rating(n)}**/10" for n in found)[:1024]})
+    alerts = [a for a in (st.get("token_alerts") or []) if time.time() * 1000 - a.get("id", 0) < 30 * 60 * 1000]
+    if alerts:
+        fields.append({"name": "\u26a0\ufe0f Token not working", "inline": False,
+                       "value": "\n".join(f"{a['label']} (\u2026{a['tail']}): {a['why']}" for a in alerts[-3:])[:1024]})
+    return {"title": "Pro Tool - live scoreboard", "description": "\n".join(lines), "color": colour, "fields": fields,
+            "footer": {"text": f"Pro Tool v{APP_VERSION} \u00b7 updates every few seconds"},
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()}
+
+
+class LiveBoard:
+    """Posts one scoreboard message when a scan starts and keeps editing it until the scan ends.
+    Uses the webhook you already set (a webhook may edit its own messages), so no bot or server is needed."""
+    EVERY = 5                                  # seconds between edits - far inside Discord's limits
+
+    def __init__(self):
+        self.msg_id, self.hook, self.was_running, self.warned = None, "", False, False
+
+    @staticmethod
+    def _split(url):
+        base, _, query = url.partition("?")
+        return base.rstrip("/"), query
+
+    def tick(self):
+        cfg, hook, running = merged_settings(), SECRETS.hook, SCANNER.running()
+        if not (cfg.get("hook_live") and hook) or cfg.get("test_mode"):
+            self.msg_id, self.was_running = None, running
+            return
+        if running and not self.was_running:
+            self.msg_id = None                 # a new scan gets a new message
+        if not running and not self.was_running:
+            return                             # nothing to show between scans
+        embed = scoreboard_embed(SCANNER.snapshot(10 ** 12))
+        base, query = self._split(hook)
+        if self.msg_id and hook == self.hook:
+            r = requests.patch(f"{base}/messages/{self.msg_id}" + (f"?{query}" if query else ""),
+                               json={"embeds": [embed]}, timeout=15)
+            if r.status_code == 404:           # someone deleted the message: post a new one next time
+                self.msg_id = None
+        else:
+            body = {"embeds": [embed], "username": (cfg.get("hook_name") or "Pro Tool")[:80]}
+            r = requests.post(f"{base}?wait=true" + (f"&{query}" if query else ""), json=body, timeout=15)
+            if r.ok:
+                self.msg_id, self.hook = r.json().get("id"), hook
+                SCANNER.add_log("Live scoreboard posted to your webhook's channel.")
+        if r.status_code == 429:
+            try:
+                time.sleep(min(30.0, float(r.json().get("retry_after", 5))))
+            except Exception:
+                time.sleep(5)
+        elif not r.ok and r.status_code != 404 and not self.warned:
+            self.warned = True
+            SCANNER.add_log(f"Live scoreboard: Discord answered HTTP {r.status_code} - check the webhook URL.", "err")
+        elif r.ok:
+            self.warned = False
+        self.was_running = running             # the scan just ended: that was its final update
+
+    def run(self):
+        while True:
+            try:
+                self.tick()
+            except Exception as e:
+                if not self.warned:
+                    self.warned = True
+                    print(f"Live scoreboard: {e}")
+            time.sleep(self.EVERY)
 
 
 def build_plan(cfg):
@@ -2223,6 +2325,7 @@ def main():
         print(f"Couldn't start on port {a.port}: {e}\nIs Pro Tool v2 already running? Try --port 8767")
         sys.exit(1)
     finish_pending_reset()                     # first copy only, before its window opens
+    threading.Thread(target=LiveBoard().run, daemon=True, name="live-scoreboard").start()
     if app_mode:
         srv.daemon_threads = True
         print(f"Pro Tool v2 app started {time.strftime('%Y-%m-%d %H:%M:%S')} - data folder: {DATA_DIR}")
