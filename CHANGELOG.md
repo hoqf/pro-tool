@@ -2,6 +2,9 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.1.6 - 2026-11-22
+- Tighter layout: every page fits the window without scrolling, and lists fill the space available.
+
 ## v2.1.5 - 2026-11-21
 - Live scoreboard: turn on 'Keep a live scoreboard message' on the Webhook page and one message in your channel updates itself during a scan.
 
