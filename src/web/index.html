@@ -574,6 +574,7 @@ textarea{min-height:64px}
 .tog-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
 .presets .row{flex-wrap:nowrap} .presets .row .sep{display:none}
 @media (max-width:1180px){.presets .row{flex-wrap:wrap}}
+.res-sort{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)} .res-sort select{width:auto;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -901,13 +902,20 @@ textarea{min-height:64px}
       <h1>Results</h1><p class="sub" id="resFile">Every available name ever found.</p>
       <div class="panel glass">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div class="row" style="align-items:center;gap:10px">
-            <input type="text" id="resFilter" placeholder="Filter…" style="max-width:240px">
+          <div class="row" style="align-items:center;gap:10px;flex:1 1 auto">
+            <input type="text" id="resFilter" placeholder="Filter…" style="max-width:200px">
             <div class="chips" id="resStars" title="Show only names rated at least this (out of 10)">
               <button data-stars="-1" class="on">Any</button><button data-stars="10">10</button><button data-stars="9">9+</button><button data-stars="8">8+</button><button data-stars="7">7+</button><button data-stars="6">6+</button>
             </div>
+            <label class="res-sort"><span>Sort</span>
+              <select id="resSort" aria-label="Sort results">
+                <option value="new">Newest first</option><option value="old">Oldest first</option>
+                <option value="best">Best rated</option><option value="worst">Lowest rated</option>
+                <option value="az">A to Z</option><option value="za">Z to A</option>
+                <option value="short">Shortest first</option><option value="long">Longest first</option>
+              </select></label>
           </div>
-          <div class="btns"><span id="resCount" class="note" style="margin:0 6px 0 0;align-self:center"></span><button class="btn sm" id="resCopy">Copy all</button><a class="btn sm" href="/api/results?download=1">Download .txt</a></div>
+          <div class="btns"><span id="resCount" class="note" style="margin:0 6px 0 0;align-self:center"></span><button class="btn sm" id="resCopy" title="Copies the names shown, in this order">Copy all</button><a class="btn sm" href="/api/results?download=1">Download .txt</a></div>
         </div>
         <div class="list" id="results" style="height:520px"></div>
       </div>
@@ -934,8 +942,10 @@ textarea{min-height:64px}
         <div class="panel glass" id="updPanel">
           <h2>Updates</h2>
           <p class="note" style="margin-top:0">You have Pro Tool <b id="updVer">v-</b>. It checks for updates each time it opens.</p>
-          <div class="btns" style="margin-top:10px"><button class="btn sm" id="updCheck">Check for updates</button></div>
+          <div class="btns" style="margin-top:10px"><button class="btn sm" id="updCheck">Check for updates</button>
+            <button class="btn sm primary" id="updNowInline" hidden>Update now</button><button class="btn sm" id="updLaterInline" hidden>Later</button></div>
           <p class="msg" id="updMsg"></p>
+          <div class="note" id="updNotesInline" style="white-space:pre-wrap" hidden></div>
         </div>
       </div>
       <div class="row" style="justify-content:flex-end;align-items:center" hidden>
@@ -1399,11 +1409,22 @@ async function loadResults(){
   $("#resFile").textContent = "Every available name ever found - saved in " + r.file;
   renderResults();
 }
+let resSort = "new", resShown = [];
+try { resSort = localStorage.getItem("pt_res_sort") || "new"; } catch (e) {}
+const RES_SORTS = {                              // Results tab "Sort" (ties keep the newest first)
+  new: null, old: null,
+  best: (a, b) => rate(b).score - rate(a).score, worst: (a, b) => rate(a).score - rate(b).score,
+  az: (a, b) => a.localeCompare(b), za: (a, b) => b.localeCompare(a),
+  short: (a, b) => a.length - b.length || a.localeCompare(b), long: (a, b) => b.length - a.length || a.localeCompare(b),
+};
 function renderResults(){
   setTimeout(fitLists, 0);                       // the header above the list can change height
   const q = $("#resFilter").value.trim().toLowerCase();
-  let rows = RES.filter(n => (!q || n.includes(q)) && (resStarsPick < 0 || rate(n).score >= resStarsPick)).reverse();   // newest first
-  rows.sort((a, b) => (FAVS.has(b.toLowerCase()) - FAVS.has(a.toLowerCase())));  // favourites first, order kept otherwise
+  let rows = RES.filter(n => (!q || n.includes(q)) && (resStarsPick < 0 || rate(n).score >= resStarsPick));
+  if (resSort !== "old") rows.reverse();         // newest first, unless "Oldest first"
+  if (RES_SORTS[resSort]) rows.sort(RES_SORTS[resSort]);
+  rows.sort((a, b) => (FAVS.has(b.toLowerCase()) - FAVS.has(a.toLowerCase())));  // favourites stay on top, order kept otherwise
+  resShown = rows;
   $("#resCount").textContent = `${fmtN(rows.length)} name(s)`;
   $("#results").innerHTML = rows.length ? rows.slice(0, 3000).map(foundRow).join("") : '<div class="empty">No results yet.</div>';
 }
@@ -1512,7 +1533,9 @@ function wire(){
   $("#resFilter").oninput = renderResults;
   $("#resStars").onclick = e => { const b = e.target.closest("button[data-stars]"); if (!b) return;
     resStarsPick = +b.dataset.stars; $$("#resStars button").forEach(x => x.classList.toggle("on", x === b)); renderResults(); };
-  $("#resCopy").onclick = () => RES.length ? copy(RES.join("\n")) : toast("No results yet");
+  $("#resCopy").onclick = () => resShown.length ? copy(resShown.join("\n")) : toast(RES.length ? "No names match the filter" : "No results yet");
+  $("#resSort").value = resSort;
+  $("#resSort").onchange = e => { resSort = e.target.value; try { localStorage.setItem("pt_res_sort", resSort); } catch (x) {} renderResults(); };
   // scan-page filter + favourites
   $("#winFilter").oninput = e => { winFilter = e.target.value.trim().toLowerCase(); renderLog(); renderFound(foundList); };
   document.addEventListener("click", async e => {
@@ -1966,7 +1989,12 @@ function fx(){
     let r; try { r = await api("/api/update/check", {}); } catch (e) { r = {ok: false, error: "Couldn't reach Pro Tool."}; }
     if (!r.ok) { if (manual) setMsg(msg, r.error || "Couldn't check for updates.", "err"); return "failed"; }
     if (!r.available) { if (manual) setMsg(msg, `You're up to date (v${r.current}).`, "ok"); return "none"; }
-    if (manual) setMsg(msg, `Version ${r.version} is available.`, "ok");
+    if (manual) {                                 // Settings: the button turns into Update now / Later right here
+      setMsg(msg, `Version ${r.version} is available (you have v${r.current}). Pro Tool closes and reopens by itself; your settings, accounts and results are kept.`, "ok");
+      $("#updNotesInline").textContent = r.notes ? "What's new:\n" + r.notes : ""; $("#updNotesInline").hidden = !r.notes;
+      inlineButtons(true);
+      return "shown";
+    }
     $("#updTitle").textContent = `Update available: v${r.version}`;
     $("#updTxt").textContent = `You have v${r.current}. Updating takes a few seconds - Pro Tool closes and opens again by itself. Your settings, accounts and results are kept.`;
     $("#updNotes").textContent = r.notes ? "What's new:\n" + r.notes : ""; $("#updNotes").hidden = !r.notes;
@@ -1974,16 +2002,24 @@ function fx(){
     if (!updAsk.open) updAsk.showModal();
     return "shown";
   }
-  $("#updCheck").onclick = () => checkUpdate(true);
-  $("#updLater").onclick = $("#updX").onclick = () => updAsk.close();
-  $("#updNow").onclick = async () => {
-    $("#updNow").disabled = $("#updLater").disabled = true; $("#updNow").textContent = "Updating…";
-    setMsg($("#updAskMsg"), "Downloading and checking the update…", "info");
+  function inlineButtons(on){
+    $("#updCheck").hidden = on; $("#updNowInline").hidden = $("#updLaterInline").hidden = !on;
+    $("#updNowInline").disabled = $("#updLaterInline").disabled = false; $("#updNowInline").textContent = "Update now";
+    if (!on) { $("#updNotesInline").hidden = true; }
+  }
+  async function installNow(btns, msg, label){    // shared by the pop-up and the Settings buttons
+    btns.forEach(b => b.disabled = true); label.textContent = "Updating…";
+    setMsg(msg, "Downloading and checking the update…", "info");
     let r; try { r = await api("/api/update/install", {}); } catch (e) { r = {ok: false, error: "Lost contact with Pro Tool."}; }
-    if (r.ok) { setMsg($("#updAskMsg"), `Installed v${r.version}. Pro Tool is restarting…`, "ok"); return; }
-    setMsg($("#updAskMsg"), r.error || "The update couldn't be installed.", "err");
-    $("#updNow").disabled = $("#updLater").disabled = false; $("#updNow").textContent = "Try again";
-  };
+    if (r.ok) { setMsg(msg, `Installed v${r.version}. Pro Tool is restarting…`, "ok"); return; }
+    setMsg(msg, r.error || "The update couldn't be installed.", "err");
+    btns.forEach(b => b.disabled = false); label.textContent = "Try again";
+  }
+  $("#updCheck").onclick = () => checkUpdate(true);
+  $("#updNowInline").onclick = () => installNow([$("#updNowInline"), $("#updLaterInline")], $("#updMsg"), $("#updNowInline"));
+  $("#updLaterInline").onclick = () => { inlineButtons(false); setMsg($("#updMsg"), "Later it is - Pro Tool will ask again next time it opens.", "muted"); };
+  $("#updLater").onclick = $("#updX").onclick = () => updAsk.close();
+  $("#updNow").onclick = () => installNow([$("#updNow"), $("#updLater")], $("#updAskMsg"), $("#updNow"));
   (function whenReady(){                      // show the version, then check right after the start-up fade
     if (!CFG) return setTimeout(whenReady, 300);
     $("#updVer").textContent = "v" + CFG.version;
