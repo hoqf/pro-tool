@@ -229,7 +229,9 @@ class Secrets:
                 self.hook = core.unprotect(d["hook_enc"])
             except Exception:
                 pass
-        if core.IS_WINDOWS and d.get("remember_token"):
+        # "remember" is on unless you turned it off - it isn't written to the file until you change it,
+        # so the default has to count here too (otherwise saved tokens were never loaded back)
+        if core.IS_WINDOWS and d.get("remember_token", DEFAULTS["remember_token"]):
             if d.get("token_enc"):
                 try:
                     self.token = core.unprotect(d["token_enc"])
