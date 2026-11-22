@@ -2,6 +2,9 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.2.0 - 2026-11-22
+- Redesigned Search tab: every category is now an equal-sized tile showing its current setting, and tapping one opens a pop-out window with its options.
+
 ## v2.1.9 - 2026-11-22
 - Accounts page: show only the tokens that failed, and remove all failed tokens with one button.
 
