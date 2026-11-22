@@ -72,7 +72,9 @@ def load_key():
 def build(out_dir):
     import webview
     work = tempfile.mkdtemp(prefix="protool-build-")
-    wv = os.path.dirname(webview.__file__)
+    # pywebview's files without its __pycache__ (compiled files there record paths on this PC, e.g. your user name)
+    wv = os.path.join(work, "webview")
+    shutil.copytree(os.path.dirname(webview.__file__), wv, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     cmd = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--onefile", "--windowed", "--name", "Pro Tool v2",
            "--icon", os.path.join(HERE, "web", "icons", "app.ico"),
            "--add-data", f"{os.path.join(HERE, 'web')};web",
@@ -89,6 +91,31 @@ def build(out_dir):
         print(r.stdout[-3000:], r.stderr[-3000:])
         sys.exit("Build failed.")
     return exe
+
+
+def private_strings(exe):
+    """Personal details that must never ship inside the exe: this PC's user name and home folder."""
+    home = os.path.expanduser("~")
+    words = {os.path.basename(home), home, home.replace("\\", "/"), os.environ.get("USERNAME", "")}
+    data, found = open(exe, "rb").read(), []
+    from PyInstaller.archive.readers import CArchiveReader
+    blobs = [data]
+    try:
+        arc = CArchiveReader(exe)
+        for name in arc.toc:
+            try:
+                d = arc.extract(name)
+                if isinstance(d, (bytes, bytearray)):
+                    blobs.append(bytes(d))
+            except Exception:
+                pass
+    except Exception:
+        pass
+    for w in filter(None, words):
+        for enc in ("utf-8", "utf-16-le"):
+            if any(w.encode(enc) in b for b in blobs):
+                found.append(repr(w)); break
+    return sorted(set(found))
 
 
 def sign(exe, version, notes, repo, asset):
@@ -151,6 +178,10 @@ def main():
             if readme:
                 z.writestr("Pro Tool v2/README.txt", readme)
         os.replace(SHARE_ZIP + ".new", SHARE_ZIP)
+    leak = private_strings(up)
+    if leak:
+        set_app_const("APP_VERSION", current)
+        sys.exit(f"Stopped: the build contains {', '.join(leak)} (personal info). Nothing was published.")
     print(f"Built and signed v{a.version}: {up}")
     print(f"Publishing to github.com/{repo} ...")
     r = subprocess.run([gh(), "release", "create", f"v{a.version}", up, mf, "--repo", repo,
