@@ -547,6 +547,33 @@ html.in-app #titlebar{background:#000!important;backdrop-filter:none!important;-
 select option{background:#0c0c0c}
 footer{background:#050505}
 .wins .win.dragging{box-shadow:0 20px 50px rgba(0,0,0,.8),0 0 0 1px #444!important}
+
+/* ---- compact layout: less empty space, less scrolling ---- */
+main{max-width:1560px;padding:20px 24px 14px}
+h1{font-size:22px;margin:0 0 2px} .sub{margin:0 0 14px;font-size:13.5px}
+h2{margin:0 0 10px}
+.panel,.panel.glass{padding:14px 16px;margin-bottom:12px}
+.grid{gap:12px}
+.tog{padding:4px 0}
+.note{font-size:12.5px;margin-top:4px;line-height:1.45}
+textarea{min-height:64px}
+.row{gap:10px}
+/* Search: panels packed into columns (no panel stretches to match a taller neighbour) */
+.search-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+.search-top>.panel{margin:0}
+.search-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.scol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.scol>.panel{margin:0}
+@media (max-width:1100px){.search-cols{grid-template-columns:1fr 1fr} .scol{display:contents}}
+@media (max-width:700px){.search-cols{grid-template-columns:1fr}}
+@media (max-width:900px){.search-top{grid-template-columns:1fr}}
+/* list windows grow and shrink with the window, so the page fits instead of scrolling */
+.page[data-page="home"] .win .log,.page[data-page="home"] .win .list{height:clamp(150px,calc(100vh - var(--home-off,532px)),640px)}
+.page[data-page="results"] .list{height:clamp(200px,calc(100vh - var(--res-off,290px)),2000px)}
+.page-win .log,html.in-app .page-win .log{height:calc(100vh - var(--win-off,230px));min-height:200px}
+.tog-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
+.presets .row{flex-wrap:nowrap} .presets .row .sep{display:none}
+@media (max-width:1180px){.presets .row{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -685,6 +712,7 @@ footer{background:#050505}
     <!-- SEARCH -->
     <section class="page" data-page="search">
       <h1>Search</h1><p class="sub">What to look for. Changes save automatically.</p>
+      <div class="search-top">
       <div class="panel glass presets">
         <h2>Presets</h2>
         <div class="row" style="align-items:center">
@@ -693,100 +721,114 @@ footer{background:#050505}
           <button class="btn sm danger" id="presetDel">Delete</button>
           <span class="sep"></span>
           <input type="text" id="presetName" maxlength="40" placeholder="Name this search…" style="flex:1 1 200px">
-          <button class="btn sm primary" id="presetSave">Save</button>
+          <button class="btn sm primary" id="presetSave" title="Saves the settings on this page">Save</button>
         </div>
-        <p class="note">Saves only the settings on this page.</p>
       </div>
       <div class="panel glass">
         <div class="est" id="estimate">…</div>
         <div class="examples" id="examples"></div>
       </div>
-      <div class="grid">
-        <div class="panel glass">
-          <h2>Length</h2>
-          <div class="row">
-            <label class="field"><span>From</span><input type="number" min="2" max="32" data-k="min"></label>
-            <label class="field"><span>To</span><input type="number" min="2" max="32" data-k="max"></label>
-          </div>
-          <div class="field" style="margin-top:14px"><span>Order</span>
-            <div class="chips" data-chips="mode"><button data-v="shortest">Shortest first</button><button data-v="random">Random</button></div></div>
-        </div>
-        <div class="panel glass">
-          <h2>Characters</h2>
-          <label class="tog"><input type="checkbox" data-k="letters"> Letters a-z</label>
-          <label class="tog"><input type="checkbox" data-k="digits"> Digits 0-9</label>
-          <label class="tog"><input type="checkbox" data-k="underscore"> Underscore _</label>
-          <label class="tog"><input type="checkbox" data-k="period"> Period .</label>
-        </div>
-        <div class="panel glass">
-          <h2>Must contain</h2>
-          <label class="field"><span>Text in every name</span><input type="text" data-k="must" placeholder="e.g. cat"></label>
-          <div class="field" style="margin-top:12px"><span>Where</span>
-            <div class="chips" data-chips="place"><button data-v="any">Anywhere</button><button data-v="start">Start</button><button data-v="end">End</button></div></div>
-        </div>
-        <div class="panel glass" id="builderPanel">
-          <h2>Word builder</h2>
-          <label class="tog"><input type="checkbox" data-k="build_on"> Build names from words + prefixes and suffixes</label>
-          <label class="field" style="margin-top:12px"><span>Base words (leave empty to use your word list)</span>
-            <input type="text" data-k="build_bases" maxlength="500" placeholder="e.g. shadow, nova, flux"></label>
-          <label class="field" style="margin-top:10px"><span>Prefixes (go in front)</span>
-            <input type="text" data-k="build_pre" maxlength="500" placeholder="e.g. neo, pro, ultra"></label>
-          <label class="field" style="margin-top:10px"><span>Suffixes (go after)</span>
-            <input type="text" data-k="build_suf" maxlength="500" placeholder="e.g. er, ly, ify"></label>
-          <label class="field" style="margin-top:10px"><span>Either side (used as prefix and suffix)</span>
-            <input type="text" data-k="build_aff" maxlength="500" placeholder="e.g. x, z, o"></label>
-          <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="build_plain"> Also check the plain base words</label>
-          <p class="note">Makes <i>prefix+word</i>, <i>word+suffix</i> and <i>prefix+word+suffix</i> (e.g. nova &rarr; neonova, novaly, neonovaly).
-            Names are picked at random from all the combinations, so every scan goes in a new order.
-            With no base words typed, it uses the words from Real words or Describe the names. Separate parts with commas or spaces.</p>
-        </div>
-        <div class="panel glass" id="describePanel">
-          <h2>Describe the names</h2>
-          <label class="field"><span>Words that describe the kind of names you want</span>
-            <input type="text" id="descText" data-k="describe" maxlength="300" placeholder="e.g. dark, ocean, fast"></label>
-          <div class="btns" style="margin-top:10px"><button class="btn primary sm" id="descGo">Find words</button><button class="btn sm" id="descOff">Turn off</button></div>
-          <p class="msg" id="descMsg"></p>
-          <div class="examples" id="descWords"></div>
-          <p class="note">Finds words related to yours (for example <i>ocean</i> &rarr; <i>tide, abyss, marine</i>) and scans names made from them. Your describing words are sent to Datamuse, a free word service, to look them up.</p>
-        </div>
-        <div class="panel glass">
-          <h2>Real words</h2>
-          <label class="field"><span>Dictionary</span><select id="langSel"></select></label>
-          <div class="row" style="margin-top:12px" id="wordsRow">
-            <label class="field"><span>Words per name, from</span><input type="number" min="1" max="8" data-k="wmin"></label>
-            <label class="field"><span>to</span><input type="number" min="1" max="8" data-k="wmax"></label>
-          </div>
-          <div class="msg" id="dictMsg"></div>
-        </div>
-        <div class="panel glass">
-          <h2>Speed</h2>
-          <div class="row">
-            <label class="field"><span>Delay from (ms)</span><input type="number" step="100" min="200" data-k="dmin" data-scale="1000"></label>
-            <label class="field"><span>to (ms)</span><input type="number" step="100" min="200" data-k="dmax" data-scale="1000"></label>
-          </div>
-          <p class="note">A random delay in this range, in milliseconds, is used between checks (1000 ms = 1 second).</p>
-        </div>
-        <div class="panel glass">
-          <h2>Stopping</h2>
-          <label class="field"><span>Stop after finding (0 = never)</span><input type="number" min="0" data-k="stop_after"></label>
-          <label class="tog" style="margin-top:8px"><input type="checkbox" data-k="skip_known"> Skip names already checked</label>
-          <div class="field" style="margin-top:12px;margin-bottom:0"><span>Only make names rated (out of 10)</span></div>
-          <div class="row">
-            <label class="field"><span>From</span><select data-k="min_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
-            <label class="field"><span>To</span><select data-k="max_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
-          </div>
-          <p class="note" style="margin-top:6px">Set both to the same number for only that rating (e.g. 10 to 10 = only 10/10 names). 0 to 10 = any.
-            Names outside the range are skipped without being checked (lists you paste are always checked). The possible-names count above still includes them.</p>
-          <div class="row" style="align-items:center;margin-top:2px"><span class="note" id="histInfo" style="margin:0"></span>
-            <button class="link" id="forgetHist">Forget</button></div>
-        </div>
       </div>
-      <div class="panel glass">
-        <h2>Check your own list</h2>
-        <textarea id="nameList" rows="6" placeholder="One name per line (or separated by commas / spaces)"></textarea>
-        <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
-          <span class="note" id="nameCount" style="margin:0">0 names</span>
-          <button class="btn primary" id="checkListed">Check these names</button>
+      <div class="search-cols">
+        <div class="scol">
+          <div class="panel glass">
+            <h2>Length</h2>
+            <div class="row">
+              <label class="field"><span>From</span><input type="number" min="2" max="32" data-k="min"></label>
+              <label class="field"><span>To</span><input type="number" min="2" max="32" data-k="max"></label>
+            </div>
+            <div class="field" style="margin-top:14px"><span>Order</span>
+              <div class="chips" data-chips="mode"><button data-v="shortest">Shortest first</button><button data-v="random">Random</button></div></div>
+          </div>
+          <div class="panel glass">
+            <h2>Characters</h2>
+            <div class="tog-grid">
+            <label class="tog"><input type="checkbox" data-k="letters"> Letters a-z</label>
+            <label class="tog"><input type="checkbox" data-k="digits"> Digits 0-9</label>
+            <label class="tog"><input type="checkbox" data-k="underscore"> Underscore _</label>
+            <label class="tog"><input type="checkbox" data-k="period"> Period .</label>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h2>Must contain</h2>
+            <div class="row">
+              <label class="field" style="flex:1 1 90px"><span>Text in every name</span><input type="text" data-k="must" placeholder="e.g. cat"></label>
+              <div class="field" style="flex:0 1 auto"><span>Where</span>
+                <div class="chips" data-chips="place"><button data-v="any">Anywhere</button><button data-v="start">Start</button><button data-v="end">End</button></div></div>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h2>Real words</h2>
+            <label class="field"><span>Dictionary</span><select id="langSel"></select></label>
+            <div class="row" style="margin-top:12px" id="wordsRow">
+              <label class="field"><span>Words per name, from</span><input type="number" min="1" max="8" data-k="wmin"></label>
+              <label class="field"><span>to</span><input type="number" min="1" max="8" data-k="wmax"></label>
+            </div>
+            <div class="msg" id="dictMsg"></div>
+          </div>
+        </div>
+        <div class="scol">
+          <div class="panel glass" id="builderPanel">
+            <h2>Word builder</h2>
+            <label class="tog"><input type="checkbox" data-k="build_on"> Build names from words + prefixes and suffixes</label>
+            <label class="field" style="margin-top:12px"><span>Base words (leave empty to use your word list)</span>
+              <input type="text" data-k="build_bases" maxlength="500" placeholder="e.g. shadow, nova, flux"></label>
+            <div class="row" style="margin-top:10px">
+            <label class="field"><span>Prefixes (go in front)</span>
+              <input type="text" data-k="build_pre" maxlength="500" placeholder="e.g. neo, pro, ultra"></label>
+            <label class="field"><span>Suffixes (go after)</span>
+              <input type="text" data-k="build_suf" maxlength="500" placeholder="e.g. er, ly, ify"></label>
+            </div>
+            <label class="field" style="margin-top:10px"><span>Either side (used as prefix and suffix)</span>
+              <input type="text" data-k="build_aff" maxlength="500" placeholder="e.g. x, z, o"></label>
+            <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="build_plain"> Also check the plain base words</label>
+            <p class="note">e.g. nova &rarr; neonova, novaly, neonovaly - picked at random, a new order every scan.
+              No base words = your Real words / Describe list.</p>
+          </div>
+          <div class="panel glass">
+            <h2>Speed</h2>
+            <div class="row">
+              <label class="field"><span>Delay from (ms)</span><input type="number" step="100" min="200" data-k="dmin" data-scale="1000"></label>
+              <label class="field"><span>to (ms)</span><input type="number" step="100" min="200" data-k="dmax" data-scale="1000"></label>
+            </div>
+            <p class="note">A random delay in this range between checks (1000 ms = 1 s).</p>
+          </div>
+        </div>
+        <div class="scol">
+          <div class="panel glass" id="describePanel">
+            <h2>Describe the names</h2>
+            <div class="row" style="align-items:center;flex-wrap:nowrap">
+              <input type="text" id="descText" data-k="describe" maxlength="300" placeholder="e.g. dark, ocean, fast"
+                aria-label="Words that describe the kind of names you want" style="flex:1 1 auto;min-width:0">
+              <button class="btn primary sm" id="descGo">Find words</button><button class="btn sm" id="descOff">Turn off</button></div>
+            <p class="msg" id="descMsg"></p>
+            <div class="examples" id="descWords"></div>
+            <p class="note">Builds names from related words (<i>ocean</i> &rarr; <i>tide, abyss, marine</i>).
+              Your words are looked up with Datamuse, a free word service.</p>
+          </div>
+          <div class="panel glass">
+            <h2>Stopping</h2>
+            <div class="row" style="align-items:flex-end">
+              <label class="field" style="flex:1 1 90px"><span>Stop after (0 = never)</span><input type="number" min="0" data-k="stop_after"></label>
+              <label class="tog" style="flex:1 1 150px;padding-bottom:8px"><input type="checkbox" data-k="skip_known"> Skip names already checked</label>
+            </div>
+            <div class="field" style="margin-top:12px;margin-bottom:0"><span>Only make names rated (out of 10)</span></div>
+            <div class="row">
+              <label class="field"><span>From</span><select data-k="min_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+              <label class="field"><span>To</span><select data-k="max_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+            </div>
+            <p class="note">10 to 10 = only perfect names, 0 to 10 = any. Others are skipped unchecked (pasted lists are always checked).</p>
+            <div class="row" style="align-items:center;margin-top:2px"><span class="note" id="histInfo" style="margin:0"></span>
+              <button class="link" id="forgetHist">Forget</button></div>
+          </div>
+          <div class="panel glass">
+            <h2>Check your own list</h2>
+            <textarea id="nameList" rows="3" placeholder="One name per line (or separated by commas / spaces)"></textarea>
+            <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
+              <span class="note" id="nameCount" style="margin:0">0 names</span>
+              <button class="btn primary sm" id="checkListed">Check these names</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1001,12 +1043,31 @@ function buildNav(){
   nav.innerHTML = TABS.map(t => `<button data-tab="${t[0]}">${t[1]}${t[0] === "errors" ? '<span class="nav-badge" id="navErrCnt" hidden></span>' : t[0] === "account" ? '<span class="nav-badge warn" id="navTokCnt" title="Tokens not working" hidden></span>' : ""}<i class="dia"></i></button>`).join("");
   nav.onclick = e => { const b = e.target.closest("button[data-tab]"); if (b) show(b.dataset.tab); };
 }
+// Scan / Results / Activity / Errors: the list windows take exactly the space left, so the page doesn't scroll
+const FIT_SEL = ".win .log, .win .list, .page[data-page=results] .list, .page-win .log";
+let fitRaf = 0;
+function fitLists(){
+  cancelAnimationFrame(fitRaf);
+  fitRaf = requestAnimationFrame(() => {
+    const pg = document.querySelector(".page.on"); if (!pg) return;
+    const els = [...pg.querySelectorAll(FIT_SEL)].filter(e => e.offsetParent && !e.closest(".win[hidden]"));
+    if (!els.length) return;
+    const MIN = 150;
+    els.forEach(e => { e.style.height = MIN + "px"; });
+    const rows = new Set(els.map(e => Math.round(e.getBoundingClientRect().top + scrollY))).size;
+    const used = document.querySelector("main").getBoundingClientRect().bottom + scrollY;   // page height with the lists at MIN
+    const each = Math.max(MIN, Math.floor(MIN + (innerHeight - used) / rows));
+    els.forEach(e => { e.style.height = each + "px"; });
+  });
+}
+addEventListener("resize", fitLists);
 function show(tab){
   if (!$(`.page[data-page="${tab}"]`)) tab = "home";
   $$(".page").forEach(p => p.classList.toggle("on", p.dataset.page === tab));
   $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
   try { localStorage.setItem("dsv_tab", tab); } catch(e) {}
   window.scrollTo(0, 0);
+  fitLists();
   if (location.hash !== "#"+tab) history.replaceState(null, "", "#"+tab);
   if (tab === "results") loadResults();
   if (tab === "search") estimate();
@@ -1201,7 +1262,8 @@ const testNames = () => logLines.filter(e => e.kind === "test" && e.id > cleared
 function renderTest(){
   const el = $("#testList"); if (!el) return;
   const all = testNames(), last = logLines.length ? logLines[logLines.length - 1].id : 0;
-  $("#testWin").hidden = !(S && S.test_mode) && !all.length;          // shows in test mode (or while it has names)
+  const hideTest = !(S && S.test_mode) && !all.length;                 // shows in test mode (or while it has names)
+  if ($("#testWin").hidden !== hideTest) { $("#testWin").hidden = hideTest; fitLists(); }
   const key = [last, all.length, clearedAt.test, testSort, winFilter].join("|");
   if (key === testKey) return;
   testKey = key;
@@ -1338,6 +1400,7 @@ async function loadResults(){
   renderResults();
 }
 function renderResults(){
+  setTimeout(fitLists, 0);                       // the header above the list can change height
   const q = $("#resFilter").value.trim().toLowerCase();
   let rows = RES.filter(n => (!q || n.includes(q)) && (resStarsPick < 0 || rate(n).score >= resStarsPick)).reverse();   // newest first
   rows.sort((a, b) => (FAVS.has(b.toLowerCase()) - FAVS.has(a.toLowerCase())));  // favourites first, order kept otherwise
