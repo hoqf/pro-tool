@@ -2,6 +2,9 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.1.9 - 2026-11-22
+- Accounts page: show only the tokens that failed, and remove all failed tokens with one button.
+
 ## v2.1.8 - 2026-11-22
 - Results tab: new Sort menu (newest, oldest, best rated, A to Z, shortest and more).
 - Settings: Check for updates now turns into Update now / Later right there.
