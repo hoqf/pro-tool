@@ -1,4 +1,4 @@
-<div align="center">
+xs <div align="center">
 
 <img src="src/web/icons/icon-192.png" width="96" alt="Pro Tool icon">
 
@@ -206,7 +206,3 @@ The signing key is kept outside this folder (`%USERPROFILE%\.protool-release`) a
 </details>
 
 ---
-
-## Credits and license
-Based on **DSV by suenerve** - original author credit is required wherever this code is used.
-**Non-commercial use only.** See [LICENSE](LICENSE).
