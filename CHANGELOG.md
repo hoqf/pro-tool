@@ -2,6 +2,9 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.1.7 - 2026-11-22
+- Fixed: saved tokens and accounts now stay saved after closing or updating Pro Tool (add them once more after this update).
+
 ## v2.1.6 - 2026-11-22
 - Tighter layout: every page fits the window without scrolling, and lists fill the space available.
 
