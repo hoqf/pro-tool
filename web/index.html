@@ -1898,14 +1898,15 @@ function fx(){
     const msg = $("#updMsg");
     if (manual) setMsg(msg, "Checking…", "info");
     let r; try { r = await api("/api/update/check", {}); } catch (e) { r = {ok: false, error: "Couldn't reach Pro Tool."}; }
-    if (!r.ok) { if (manual) setMsg(msg, r.error || "Couldn't check for updates.", "err"); return; }
-    if (!r.available) { if (manual) setMsg(msg, `You're up to date (v${r.current}).`, "ok"); return; }
+    if (!r.ok) { if (manual) setMsg(msg, r.error || "Couldn't check for updates.", "err"); return "failed"; }
+    if (!r.available) { if (manual) setMsg(msg, `You're up to date (v${r.current}).`, "ok"); return "none"; }
     if (manual) setMsg(msg, `Version ${r.version} is available.`, "ok");
     $("#updTitle").textContent = `Update available: v${r.version}`;
     $("#updTxt").textContent = `You have v${r.current}. Updating takes a few seconds - Pro Tool closes and opens again by itself. Your settings, accounts and results are kept.`;
     $("#updNotes").textContent = r.notes ? "What's new:\n" + r.notes : ""; $("#updNotes").hidden = !r.notes;
     setMsg($("#updAskMsg"), "", ""); $("#updNow").disabled = false; $("#updNow").textContent = "Update now"; $("#updLater").disabled = false;
     if (!updAsk.open) updAsk.showModal();
+    return "shown";
   }
   $("#updCheck").onclick = () => checkUpdate(true);
   $("#updLater").onclick = $("#updX").onclick = () => updAsk.close();
@@ -1917,10 +1918,15 @@ function fx(){
     setMsg($("#updAskMsg"), r.error || "The update couldn't be installed.", "err");
     $("#updNow").disabled = $("#updLater").disabled = false; $("#updNow").textContent = "Try again";
   };
-  (function whenReady(){                      // show the version, then one quiet check a few seconds after opening
+  (function whenReady(){                      // show the version, then check right after the start-up fade
     if (!CFG) return setTimeout(whenReady, 300);
     $("#updVer").textContent = "v" + CFG.version;
-    if (CFG.can_update) setTimeout(() => checkUpdate(false), 4000);
+    if (!CFG.can_update) return;
+    let tries = 0;
+    const startCheck = async () => {           // no internet yet (e.g. just woke up): try again in a minute, 3 times
+      if (await checkUpdate(false) === "failed" && ++tries < 4) setTimeout(startCheck, 60000);
+    };
+    setTimeout(startCheck, 1500);
   })();
   $("#tbMax").onclick = () => winCall("toggle_maximize");
   $("#tbClose").onclick = () => winCall("close");
