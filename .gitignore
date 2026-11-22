@@ -1,0 +1,19 @@
+# Your own data - settings, saved accounts (encrypted tokens), results, history, logs, browser data
+dist/
+*.log
+dsv_settings.json
+available_usernames.txt
+dsv_checked.txt
+
+# Build leftovers and the exe (the exe is published under Releases instead)
+build/
+__pycache__/
+*.pyc
+*.spec
+*.exe
+*.exe.new
+*.exe.old
+
+# Never publish the update signing key
+*.pem
+.protool-release/

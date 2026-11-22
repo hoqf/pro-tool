@@ -1,0 +1,2139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<title>Pro Tool</title>
+<script>if (/[?&]app=1\b/.test(location.search)) document.documentElement.classList.add("in-app");   // opened by the desktop app</script>
+<style>
+:root{
+  --hue:175;
+  /* accent family: violet -> blue for buttons, cyan -> lavender for display text */
+  --violet:hsl(calc(var(--hue) + 18) 88% 70%);
+  --blue:hsl(calc(var(--hue) + 10) 92% 64%);
+  --cyan:hsl(var(--hue) 78% 66%);
+  --accent:var(--blue); --accent-ink:#fff; --accent-soft:hsl(calc(var(--hue) + 14) 90% 65% / .18);
+  --grad-btn:linear-gradient(100deg,var(--violet),var(--blue));
+  --grad-text:linear-gradient(180deg,var(--cyan),var(--violet));
+  --bg0:#000; --bg1:rgba(255,255,255,.028); --bg2:rgba(8,9,14,.75); --border:rgba(255,255,255,.085);
+  --chip:#13141b; --chip-h:#1d1f29; --glass:rgba(10,11,16,.62);
+  --text:#eef0f6; --muted:#8e93a6; --ok:#4ade80; --warn:#fbbf24; --err:#f87171;
+  --radius:14px; --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --display:"Orbitron","Exo 2",system-ui,sans-serif;
+}
+:root[data-mode="dark"]{--bg0:#05060a}
+:root[data-mode="light"]{--bg0:#f6f7fb;--bg1:#fff;--bg2:#fff;--border:#dcdfe8;--chip:#eef0f5;--chip-h:#e2e5ee;--glass:rgba(255,255,255,.8);
+  --text:#0e1018;--muted:#5d6275;--ok:#16883f;--warn:#a96800;--err:#d93025;
+  --violet:hsl(calc(var(--hue) + 18) 70% 52%);--blue:hsl(calc(var(--hue) + 10) 80% 48%);--cyan:hsl(var(--hue) 80% 34%)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg0);color:var(--text);font:15px/1.5 "Exo 2",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--cyan)}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+:root[data-mode="light"] #stars{display:none}
+.app{position:relative;z-index:1;min-height:100vh}
+
+/* ---------- floating glass nav (top) */
+header{position:sticky;top:14px;z-index:20;margin:14px auto 0;width:calc(100% - 32px);max-width:1180px;
+  display:flex;align-items:center;gap:14px;padding:8px 8px 8px 16px;border:1px solid var(--border);border-radius:16px;
+  background:var(--glass);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.logo{display:flex;align-items:center;gap:10px;font:700 15px var(--display);letter-spacing:.04em;white-space:nowrap}
+.logo svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 0 6px hsl(calc(var(--hue) + 14) 90% 65% / .55))}
+nav{flex:1;display:flex;justify-content:center;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}
+nav::-webkit-scrollbar{display:none}
+nav button{border:0;background:none;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--muted);
+  white-space:nowrap;letter-spacing:.02em;transition:color .15s,background .15s}
+nav button svg{display:none}
+nav button:hover{color:var(--text)}
+nav button.on{color:var(--text);background:rgba(255,255,255,.06)}
+:root[data-mode="light"] nav button.on{background:var(--chip)}
+nav hr,nav .credit{display:none}
+.status{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;background:var(--chip);border:1px solid var(--border);
+  font-size:13.5px;font-weight:600;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status[data-k="run"] .dot{background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pulse 1.4s infinite}
+.status[data-k="warn"] .dot{background:var(--warn);box-shadow:0 0 10px var(--warn)} .status[data-k="err"] .dot{background:var(--err)}
+@keyframes pulse{50%{opacity:.35}}
+
+main{max-width:1180px;width:100%;margin:0 auto;padding:28px 16px 48px;min-width:0}
+h1{font:700 24px var(--display);letter-spacing:.03em;margin:0 0 6px} .sub{color:var(--muted);margin:0 0 22px;font-size:14.5px}
+h2{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px}
+.panel{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;min-width:0;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1 1 120px}
+.field>span{font-size:12px;color:var(--muted);letter-spacing:.02em}
+input[type=text],input[type=number],input[type=password],input[type=url],select,textarea{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;width:100%;min-width:0;outline:none}
+select option{background:#0b0c12}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;min-height:110px;font-family:var(--mono);font-size:13px}
+
+/* ---------- buttons: dark "Log In" style + gradient "Download" style */
+.btn{border:1px solid var(--border);border-radius:10px;padding:9px 16px;background:var(--chip);cursor:pointer;font-weight:600;font-size:14px;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;letter-spacing:.02em;transition:background .15s,box-shadow .2s,transform .1s}
+.btn:hover{background:var(--chip-h)} .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.primary{background:var(--grad-btn);color:#fff;border-color:transparent;box-shadow:0 0 18px hsl(calc(var(--hue) + 14) 90% 65% / .35)}
+.btn.primary:hover:not(:disabled){box-shadow:0 0 28px hsl(calc(var(--hue) + 14) 90% 65% / .6);filter:brightness(1.06)}
+.btn.danger{color:var(--err)} .btn.sm{padding:6px 12px;font-size:13px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--border);background:var(--bg2);border-radius:9px;padding:6px 14px;cursor:pointer;font-size:13px}
+.chips button.on{background:var(--grad-btn);color:#fff;border-color:transparent}
+.tog{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none}
+.tog input{appearance:none;width:38px;height:22px;border-radius:999px;background:var(--chip-h);border:1px solid var(--border);position:relative;flex:none;cursor:pointer;margin:0}
+.tog input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+.tog input:checked{background:var(--grad-btn);border-color:transparent} .tog input:checked::after{left:18px}
+.note{font-size:13px;color:var(--muted);margin:6px 0 0}
+
+/* ---------- home hero */
+.hero{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin:-6px 0 6px;min-height:330px}
+.hero .word{font:800 clamp(34px,5.4vw,70px)/1 var(--display);letter-spacing:.06em;background:var(--grad-text);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px hsl(var(--hue) 80% 65% / .35));user-select:none}
+.hero .word.l{text-align:left} .hero .word.r{text-align:right}
+#heroLogo{width:330px;height:330px;display:block}
+.tagline{text-align:center;color:var(--muted);margin:0 0 26px;font-size:15px;letter-spacing:.03em}
+.tagline b{color:var(--text);font-weight:600}
+.warnbox{border:1px solid hsl(40 90% 55% / .25);padding:10px 14px;background:hsl(40 90% 55% / .06);border-radius:12px;font-size:13px;margin-bottom:16px;color:var(--muted)}
+.warnbox::before{content:"!";display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--warn);color:#000;font-weight:800;font-size:12px;margin-right:9px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;left:18px;right:18px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--c,var(--cyan)),transparent);opacity:.7}
+.stat b{display:block;font:700 32px/1.2 "Exo 2",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.stat span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.stat.ok{--c:var(--ok)} .stat.ok b{color:var(--ok);text-shadow:0 0 16px hsl(142 70% 55% / .45)}
+.stat.err{--c:var(--err)} .stat.err b{color:var(--err)} .stat.tk{--c:var(--violet)}
+.bar{height:6px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;margin:14px 0 8px}
+.bar i{display:block;height:100%;width:0;background:var(--grad-btn);box-shadow:0 0 12px var(--blue);transition:width .3s;border-radius:999px}
+.bar.indef i{width:30%;animation:slide 1.3s infinite ease-in-out}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+.prog-text{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px}
+.acctpick{display:flex;align-items:center;gap:8px}
+.acctpick>span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.acctpick select{width:auto;min-width:190px;padding:7px 10px}
+.wins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.win{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 16px;min-width:0;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);--c:var(--cyan)}
+.win[data-w="ok"]{--c:var(--ok)} .win[data-w="err"]{--c:var(--err)} .win[data-w="taken"]{--c:var(--violet)}
+.win-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.win-h>i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);flex:none}
+.win-h h2{margin:0} .win-h .btns{margin-left:auto}
+.cnt{font-size:12px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--c);font-variant-numeric:tabular-nums}
+.win .log,.win .list{height:300px}
+.win[data-w="ok"] .list div span{color:var(--ok);font-weight:600}
+.log{height:360px;overflow:auto;font-family:var(--mono);font-size:12.5px;background:var(--bg2);border-radius:10px;padding:10px 12px;
+  border:1px solid var(--border);overflow-wrap:anywhere}
+.log div{padding:1px 0} .log .t{color:var(--muted);margin-right:8px;opacity:.7}
+.log .ok{color:var(--ok);font-weight:700;text-shadow:0 0 10px hsl(142 70% 55% / .4)} .log .err{color:var(--err)} .log .warn{color:var(--warn)} .log .taken{color:var(--muted)}
+.list{height:360px;overflow:auto;background:var(--bg2);border-radius:10px;border:1px solid var(--border);padding:4px}
+.list div{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:8px;font-family:var(--mono);font-size:13px}
+.list div:hover{background:rgba(255,255,255,.05)}
+.list button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px}
+.list button:hover{color:var(--cyan)}
+.empty{color:var(--muted);font-size:13px;padding:10px}
+.examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.examples code{background:var(--chip);border:1px solid var(--border);padding:3px 9px;border-radius:8px;font-family:var(--mono);font-size:12.5px}
+.est{font-size:14px} .est b{color:var(--cyan)} .est.err{color:var(--err)}
+.acct{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);margin-bottom:6px;flex-wrap:wrap}
+.acct.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset,0 0 18px var(--accent-soft)}
+.acct .who{flex:1;min-width:120px} .acct .who small{display:block;color:var(--muted);font-size:12px}
+.acct .bad{color:var(--err)}
+.wins > .win[data-w="test"]{grid-column:1/-1}   /* Test names: full width so its header fits */
+#testWin .win-h h2{white-space:nowrap} #testWin .cnt{white-space:nowrap}
+/* a token that isn't working: yellow */
+.acct.tokbad{border-color:#d4b106!important;background:rgba(212,177,6,.10)!important;box-shadow:0 0 0 1px #d4b106 inset!important}
+.acct.tokbad .who b,.acct .tokwhy,.tokwarn{color:#f0cf2a!important}
+.nav-badge.warn{color:#f0cf2a;background:#1f1a05;border-color:#5a4b0a}
+.tok-alert{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:900;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  max-width:min(720px,calc(100vw - 32px));padding:12px 14px;background:#141105;border:1px solid #d4b106;color:#f3e3a0;font-size:13.5px;
+  box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.tok-alert[hidden]{display:none}
+.tok-alert b{color:#f0cf2a}
+.tok-alert .txt{flex:1;min-width:260px;line-height:1.45}
+.tok-alert .acts{display:flex;gap:8px;margin-left:auto}
+.tok-alert button{border:1px solid #5a4b0a;background:#1f1a05;color:#f3e3a0;padding:5px 10px;cursor:pointer;font-size:12.5px}
+.tok-alert button:hover{border-color:#d4b106}
+.lang{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:420px;overflow:auto;margin-top:12px}
+.lang button{display:flex;justify-content:space-between;gap:8px;text-align:left;border:1px solid var(--border);background:var(--bg2);
+  border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13.5px}
+.lang button:hover{background:var(--chip-h)} .lang button.on{border-color:var(--blue);background:var(--accent-soft)}
+.lang small{color:var(--muted);font-size:11.5px}
+.msg{font-size:13px;margin-top:10px} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)} .msg.info{color:var(--cyan)} .msg.muted{color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.hue{height:10px;border-radius:999px;background:linear-gradient(90deg,hsl(0 100% 60%),hsl(60 100% 55%),hsl(120 90% 50%),hsl(180 90% 50%),hsl(240 100% 65%),hsl(300 100% 60%),hsl(360 100% 60%));margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--glass);border:1px solid var(--border);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);
+  padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)} .toast.err{border-color:var(--err);color:var(--err)}
+.page{display:none} .page.on{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.mobile-run{display:none}
+@media (max-width:980px){
+  header{flex-wrap:wrap} nav{order:3;flex-basis:100%;justify-content:flex-start}
+  .stats{grid-template-columns:repeat(2,1fr)} .wins{grid-template-columns:1fr}
+  .hero{min-height:240px} #heroLogo{width:220px;height:220px}
+}
+@media (prefers-reduced-motion:reduce){.page.on{animation:none}}
+
+/* ---------- intro (black hole -> logo) */
+html.intro-lock,html.intro-lock body{overflow:hidden}
+#intro{position:fixed;inset:0;z-index:100;background:#000;color:#eef0f6;--hint:1;--cap:0;--ui:1;--prog:0;touch-action:none;overscroll-behavior:none}
+#introCv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#intro .i-top{position:absolute;top:34px;left:0;right:0;text-align:center;font:700 14px var(--display);letter-spacing:.5em;
+  color:rgba(238,240,246,.55);opacity:var(--ui);padding-left:.5em}
+#intro .i-cap{position:absolute;left:0;right:0;bottom:16%;text-align:center;font:800 clamp(22px,3vw,38px) var(--display);letter-spacing:.14em;
+  background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:var(--cap);
+  transform:translateY(calc((1 - var(--cap)) * 14px));filter:drop-shadow(0 0 16px hsl(var(--hue) 80% 65% / .4))}
+#intro .i-hint{position:absolute;left:0;right:0;bottom:44px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:rgba(238,240,246,.6);opacity:var(--hint);pointer-events:none}
+#intro .mouse{width:24px;height:38px;border:2px solid rgba(238,240,246,.55);border-radius:13px;position:relative}
+#intro .mouse i{position:absolute;left:50%;top:7px;width:3px;height:8px;margin-left:-1.5px;border-radius:2px;background:var(--cyan);animation:wheel 1.6s infinite}
+@keyframes wheel{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
+#intro .i-prog{position:absolute;right:28px;top:50%;width:2px;height:120px;margin-top:-60px;background:rgba(255,255,255,.1);border-radius:2px;opacity:var(--ui)}
+#intro .i-prog i{position:absolute;left:0;right:0;top:0;height:calc(var(--prog) * 100%);background:var(--grad-btn);border-radius:2px;box-shadow:0 0 8px var(--blue)}
+#intro .i-skip{position:absolute;top:24px;right:24px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(238,240,246,.6);
+  border-radius:9px;padding:6px 14px;font-size:12.5px;letter-spacing:.08em;cursor:pointer;opacity:var(--ui)}
+#intro .i-skip:hover{color:#fff;background:rgba(255,255,255,.08)}
+@media (prefers-reduced-motion:reduce){#intro .mouse i{animation:none}}
+
+/* ================= v3: darker space, liquid glass, minimal ================= */
+:root,:root[data-mode]{--bg0:#000;--muted:#8a90a3}
+body{background:#000}
+
+/* liquid glass: frosted + saturated backdrop, bright specular top edge, light-catching rim */
+.glass{position:relative;isolation:isolate;
+  background:linear-gradient(150deg,rgba(255,255,255,calc(.07 * var(--gs))),rgba(255,255,255,calc(.015 * var(--gs))) 42%,rgba(255,255,255,calc(.03 * var(--gs))));
+  border:1px solid rgba(255,255,255,.07)!important;
+  backdrop-filter:blur(calc(20px * var(--gs))) saturate(175%);-webkit-backdrop-filter:blur(calc(20px * var(--gs))) saturate(175%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.17),inset 0 -1px 0 rgba(255,255,255,.03),inset 0 0 30px rgba(255,255,255,.02),0 14px 44px rgba(0,0,0,.55)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(120% 70% at 0% 0%,rgba(255,255,255,.085),transparent 55%),
+             radial-gradient(90% 70% at 100% 100%,hsl(calc(var(--hue) + 10) 90% 70% / .045),transparent 60%)}
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.42),rgba(255,255,255,.07) 28%,rgba(255,255,255,0) 52%,rgba(255,255,255,.05) 78%,rgba(255,255,255,.22));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.panel.glass,.win.glass{border-radius:22px;padding:20px}
+.stat.glass{border-radius:20px}
+.stat span::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c,var(--cyan));margin-right:8px;vertical-align:1px;box-shadow:0 0 8px var(--c,var(--cyan))}
+.stat{--c:#c9cede}
+.win .log,.win .list,.list,.log,input[type=text],input[type=number],input[type=password],input[type=url],select,textarea{
+  background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.07)}
+
+/* top bar: brand left, links centre, status + gradient action right (glassier, more transparent) */
+header.glass-bar{position:sticky;top:14px;max-width:1180px;padding:9px 9px 9px 18px;border-radius:16px;gap:18px;
+  background:linear-gradient(150deg,rgba(255,255,255,calc(.045 * var(--gs))),rgba(255,255,255,calc(.008 * var(--gs))) 50%,rgba(255,255,255,calc(.02 * var(--gs))));
+  backdrop-filter:blur(calc(14px * var(--gs))) saturate(190%);-webkit-backdrop-filter:blur(calc(14px * var(--gs))) saturate(190%);
+  backdrop-filter:url(#refract) blur(calc(12px * var(--gs))) saturate(190%)}
+header .logo{text-decoration:none;color:var(--text);font:700 16px var(--display);letter-spacing:.02em}
+header .logo svg{width:32px;height:32px}
+nav{gap:6px}
+nav button{font:500 13px var(--display);letter-spacing:.03em;color:rgba(214,219,235,.62);padding:8px 12px;display:inline-flex;align-items:center;gap:8px}
+nav button:hover{color:#fff;background:none}
+nav button.on{color:#fff;background:none}
+nav .dia{width:6px;height:6px;border:1.3px solid hsl(calc(var(--hue) + 10) 90% 72%);transform:rotate(45deg);opacity:.55;flex:none;transition:.2s}
+nav button.on .dia{opacity:1;background:hsl(calc(var(--hue) + 10) 90% 72%);box-shadow:0 0 8px hsl(calc(var(--hue) + 10) 90% 70%)}
+.bar-r{display:flex;align-items:center;gap:8px}
+.status{background:rgba(12,13,20,.85);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:9px 14px;font:600 13px var(--display);letter-spacing:.02em}
+#runBtn{font:700 13.5px var(--display);letter-spacing:.02em;padding:10px 18px;border-radius:11px;
+  background:linear-gradient(100deg,hsl(calc(var(--hue) + 18) 85% 66%),hsl(calc(var(--hue) + 6) 90% 60%))}
+#runBtn.stop{background:rgba(248,113,113,.12);color:var(--err);border:1px solid rgba(248,113,113,.45);box-shadow:none}
+
+/* small text button */
+.link{border:0;background:none;color:var(--cyan);cursor:pointer;font-size:13px;padding:0}
+.link:hover{text-decoration:underline}
+a.btn{text-decoration:none;color:inherit}
+
+/* footer (like the reference): brand + blurb + button, link columns, base line */
+footer{position:relative;z-index:1;margin-top:72px;background:rgba(7,8,12,.86);border-top:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.f-in{max-width:1180px;margin:0 auto;padding:56px 24px 40px;display:grid;grid-template-columns:1.6fr repeat(5,1fr);gap:24px}
+.f-brand .logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;font:700 18px var(--display)}
+.f-brand .logo svg{width:38px;height:38px;filter:drop-shadow(0 0 6px hsl(calc(var(--hue) + 14) 90% 65% / .5))}
+.f-brand p{color:var(--muted);font-size:14.5px;line-height:1.6;max-width:340px;margin:20px 0 24px}
+.btn.ghost{background:rgba(10,11,17,.9);border:1px solid rgba(255,255,255,.13);padding:11px 18px;border-radius:12px;font-weight:700;color:#fff}
+.btn.ghost:hover{background:rgba(255,255,255,.06)}
+.f-col h3{font:700 14px "Exo 2",sans-serif;color:#fff;margin:8px 0 18px}
+.f-col a,.f-col span{display:block;color:var(--muted);text-decoration:none;font-size:13.5px;margin-bottom:13px}
+.f-col a:hover{color:#fff}
+.f-base{max-width:1180px;margin:0 auto;padding:18px 24px 30px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;color:rgba(138,144,163,.75);font-size:12.5px}
+@media (max-width:980px){.f-in{grid-template-columns:1fr 1fr}.f-brand{grid-column:1/-1}}
+
+/* scan-page tools, speed chart, favourites + rating */
+.wintools{display:flex;gap:12px;align-items:center;margin:16px 0}
+.wintools input{max-width:340px}
+.wintools .tog{font-size:13px;padding:0}
+.speed{width:100%;height:52px;display:block;margin-top:12px}
+.list div{display:flex;align-items:center;gap:9px}
+.list span:not(.rate){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.star{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0;flex:none;width:16px}
+.star:hover{color:#8fb8ff}
+.star.on{color:#8fb8ff;text-shadow:0 0 8px rgba(143,184,255,.55)}
+.rate{font-size:12px;flex:none;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.rate b{font-weight:600}
+.rate i{font-style:normal}
+.rate .sf{color:#8fb8ff}
+.rate .se{color:#24357a}          /* very dark blue outline for empty stars (still visible on black) */
+#resStars button{padding:5px 11px;font-size:12.5px}
+/* mouse parallax (--px/--py are set on :root every frame). Nearer things move more:
+   hero words 26px > stat cards 10px > logo 12px... > panels/windows 6px > solar system > stars */
+:root{--px:0;--py:0;--gs:1}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.swatches button{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.12);padding:0;transition:transform .15s}
+.swatches button:hover{transform:scale(1.12)}
+.swatches button.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.2)}
+.val{color:var(--cyan);font-weight:700}
+[data-page="personal"] .field>span{display:flex;justify-content:space-between}
+.hero .word{translate:calc(var(--px) * 26px) calc(var(--py) * 14px)}
+#heroLogo{translate:calc(var(--px) * 12px) calc(var(--py) * 8px)}
+.page .stat{translate:calc(var(--px) * 10px) calc(var(--py) * 6px)}
+.page .panel,.page .win{translate:calc(var(--px) * 6px) calc(var(--py) * 4px)}
+.presets .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.08);margin:0 4px}
+/* token how-to modal */
+.modal{position:fixed;inset:0;height:fit-content;max-width:560px;width:calc(100% - 32px);border-radius:22px;padding:22px 24px;color:var(--text);margin:auto;
+  background:linear-gradient(150deg,rgba(20,22,32,.92),rgba(10,11,17,.94))}
+.modal::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+.modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.modal-h h2{margin:0}
+.modal .x{border:0;background:none;color:var(--muted);font-size:24px;line-height:1;cursor:pointer;padding:0 4px}
+.modal .x:hover{color:#fff}
+.steps{margin:10px 0 16px;padding-left:22px;line-height:1.65;font-size:14px}
+.steps li{margin-bottom:6px}
+.steps code,.steps kbd{font-family:var(--mono);font-size:12.5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:1px 6px}
+.warn-note{font-size:13px;color:var(--muted);border:1px solid hsl(40 90% 55% / .3);background:hsl(40 90% 55% / .07);border-radius:12px;padding:10px 14px}
+
+/* scrollbars: hide the page's own (incl. the far-right window bar), keep a small dark one inside each panel */
+html{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar{width:0;height:0}
+*{scrollbar-width:none}                       /* default: no bar anywhere */
+*::-webkit-scrollbar{width:0;height:0}
+.log,.list,textarea{scrollbar-width:thin;scrollbar-color:rgba(130,135,150,.4) transparent}
+.log::-webkit-scrollbar,.list::-webkit-scrollbar,textarea::-webkit-scrollbar{width:7px;height:7px}
+.log::-webkit-scrollbar-track,.list::-webkit-scrollbar-track,textarea::-webkit-scrollbar-track{background:transparent;margin:4px}
+.log::-webkit-scrollbar-thumb,.list::-webkit-scrollbar-thumb,textarea::-webkit-scrollbar-thumb{background:rgba(130,135,150,.35);border-radius:4px}
+.log::-webkit-scrollbar-thumb:hover,.list::-webkit-scrollbar-thumb:hover,textarea::-webkit-scrollbar-thumb:hover{background:rgba(160,165,180,.55)}
+
+/* ================= v2 layer: visual upgrades only ================= */
+/* desktop app title bar: blends into the page; drag to move, double-click to maximize */
+#titlebar{display:none}
+html.in-app #titlebar{display:flex;position:fixed;top:0;left:0;right:0;height:34px;z-index:400;align-items:stretch;user-select:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.78),rgba(0,0,0,.38));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.tb-drag{flex:1;display:flex;align-items:center;gap:8px;padding-left:13px;font:600 11.5px var(--display);letter-spacing:.08em;color:rgba(214,219,235,.5)}
+.tb-drag svg{width:15px;height:15px;flex:none}
+.tb-btns{display:flex}
+.tb-btns button{width:46px;border:0;background:transparent;color:rgba(230,234,245,.72);display:grid;place-items:center;padding:0;transition:background .15s,color .15s}
+.tb-btns svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.1}
+.tb-btns button:hover{background:rgba(255,255,255,.08);color:#fff}
+.tb-btns button.x:hover{background:#e81123;color:#fff}
+.tb-btns .i-res{display:none}
+html.maxed .tb-btns .i-max{display:none}
+html.maxed .tb-btns .i-res{display:block}
+.rz{position:fixed;z-index:500}
+.rz-n,.rz-s{left:10px;right:10px;height:5px;cursor:ns-resize}
+.rz-n{top:0} .rz-s{bottom:0}
+.rz-e,.rz-w{top:10px;bottom:10px;width:5px;cursor:ew-resize}
+.rz-e{right:0} .rz-w{left:0}
+.rz-ne,.rz-nw,.rz-se,.rz-sw{width:12px;height:12px}
+.rz-ne{top:0;right:0;cursor:nesw-resize} .rz-sw{bottom:0;left:0;cursor:nesw-resize}
+.rz-nw{top:0;left:0;cursor:nwse-resize} .rz-se{bottom:0;right:0;cursor:nwse-resize}
+html.maxed .rz{display:none}
+html.in-app body{padding-top:34px}
+html.in-app .app{min-height:calc(100vh - 34px)}
+html.in-app header.glass-bar{top:48px}
+html.in-app #intro .i-top{top:58px}
+html.in-app #intro .i-skip{top:46px}
+.v2{font:800 10px var(--display);letter-spacing:.08em;margin-left:2px;padding:2px 6px;border-radius:6px;color:#fff;vertical-align:4px;
+  background:linear-gradient(100deg,hsl(calc(var(--hue) + 18) 85% 66%),hsl(calc(var(--hue) + 6) 90% 60%))}
+.kbd-hint{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--muted);font:600 11px var(--mono);
+  padding:6px 9px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.kbd-hint:hover{color:#fff;border-color:rgba(255,255,255,.25)}
+.kbd-hint.gear{display:grid;place-items:center;padding:6px 7px}
+.credit{margin:0;font-size:12px}
+main{padding-bottom:64px}
+
+/* soft light that follows the cursor across the background */
+#spot{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(520px circle at var(--cx,50%) var(--cy,50%),hsl(calc(var(--hue) + 12) 90% 65% / .07),transparent 60%)}
+
+/* 3D tilt, with a highlight that tracks the mouse across the glass */
+.tilt{transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.tilt.live{transition:transform .08s linear}
+.glass.tilt::before{background:radial-gradient(420px circle at var(--mx,30%) var(--my,0%),rgba(255,255,255,var(--sheen,.06)),transparent 60%),
+  radial-gradient(90% 70% at 100% 100%,hsl(calc(var(--hue) + 10) 90% 70% / .045),transparent 60%)}
+
+/* cards rise in one after another when a page opens */
+@keyframes rise{from{opacity:0;scale:.965}to{opacity:1;scale:1}}
+.page.on .rise{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 55ms)}
+
+/* while scanning: rings ripple out of the logo, the Stop button and found count glow */
+.logo-wrap{position:relative;display:grid;place-items:center}
+.logo-wrap .ring{position:absolute;inset:18%;border-radius:50%;border:1px solid hsl(calc(var(--hue) + 10) 90% 70% / .5);opacity:0;pointer-events:none}
+.scanning .logo-wrap .ring{animation:ripple 3s cubic-bezier(.2,.6,.3,1) infinite}
+.scanning .logo-wrap .ring:nth-child(2){animation-delay:1s}
+.scanning .logo-wrap .ring:nth-child(3){animation-delay:2s}
+@keyframes ripple{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.7);opacity:0}}
+.scanning #runBtn{animation:pulseRed 2s ease-in-out infinite}
+@keyframes pulseRed{50%{box-shadow:0 0 22px rgba(248,113,113,.45)}}
+.scanning .stat.ok b{animation:glowNum 2.4s ease-in-out infinite}
+@keyframes glowNum{50%{text-shadow:0 0 22px hsl(142 70% 55% / .8)}}
+.roll{transition:color .3s,text-shadow .3s}
+.roll.bump{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.5)}
+
+/* a find: sparks burst from the count, the window flashes, the new row glows */
+.spark{position:fixed;width:6px;height:6px;border-radius:50%;pointer-events:none;z-index:130}
+.win.flash{box-shadow:0 0 0 1px var(--ok),0 0 40px hsl(142 70% 55% / .35),0 14px 44px rgba(0,0,0,.55)!important;transition:box-shadow .3s}
+#found div.new{animation:newRow 2.4s ease-out}
+@keyframes newRow{0%{background:hsl(142 70% 55% / .28)}100%{background:transparent}}
+
+/* command palette (Ctrl+K) */
+.palette{position:fixed;inset:0;margin:12vh auto auto;height:fit-content;max-width:560px;width:calc(100% - 32px);padding:0;border-radius:18px;color:var(--text);
+  background:linear-gradient(150deg,rgba(22,24,34,.94),rgba(10,11,17,.96))}
+.palette::backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(5px)}
+.palette input{border:0!important;border-bottom:1px solid rgba(255,255,255,.08)!important;border-radius:0!important;background:transparent!important;
+  padding:16px 18px!important;font-size:15px;box-shadow:none!important}
+.palette ul{list-style:none;margin:0;padding:8px;max-height:340px;overflow:auto}
+.palette li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px}
+.palette li small{color:var(--muted);font-size:12px}
+.palette li.sel{background:linear-gradient(100deg,hsl(calc(var(--hue) + 18) 85% 66% / .22),hsl(calc(var(--hue) + 6) 90% 60% / .14))}
+@media (prefers-reduced-motion:reduce){.page.on .rise,.scanning .logo-wrap .ring,.scanning #runBtn,.scanning .stat.ok b,#found div.new{animation:none}}
+</style>
+<style>
+/* ---------- startup animation (an overlay only: it sits above the start screen and opens onto it) */
+#boot{position:fixed;inset:0;z-index:1000;background:#000;cursor:default;animation:bootSafe .5s 9s forwards}
+#boot.live{background:transparent}
+#bootCv{position:absolute;inset:0;width:100%;height:100%;display:block}
+@keyframes bootSafe{to{opacity:0;visibility:hidden}}   /* failsafe: never leaves the screen black */
+/* it waits for the lock screen, and sits just under the app's title bar so the window can still be moved */
+#boot{display:none;z-index:395;animation:none}
+#boot.run{display:block;animation:bootSafe .5s 9s forwards}
+
+
+</style>
+<style>
+/* ================= colour scheme: black + dark blue (fixed) ================= */
+:root,:root[data-mode]{
+  --violet:hsl(222 85% 64%); --blue:hsl(218 80% 52%); --cyan:hsl(208 92% 74%);
+  --accent:var(--blue); --accent-soft:hsl(218 85% 55% / .2);
+  --grad-btn:linear-gradient(100deg,hsl(226 72% 30%),hsl(215 85% 47%));
+  --grad-text:linear-gradient(180deg,hsl(206 95% 82%),hsl(222 82% 56%));
+  --bg0:#000; --chip:#0b1020; --chip-h:#121a30; --glass:rgba(6,10,22,.62);
+  --text:#e6ecf8; --muted:#8590aa;
+}
+body{background:radial-gradient(120% 75% at 50% -12%,#071431 0%,#030915 42%,#000 78%) fixed #000}
+#runBtn,.v2{background:linear-gradient(100deg,hsl(226 72% 30%),hsl(214 85% 47%))}
+.btn.primary{box-shadow:0 0 18px hsl(218 90% 50% / .32)}
+.btn.primary:hover:not(:disabled){box-shadow:0 0 26px hsl(218 90% 55% / .5)}
+.chips button.on,.tog input:checked{background:var(--grad-btn)}
+.status{background:rgba(6,10,22,.85)}
+.palette,.modal{background:linear-gradient(150deg,rgba(10,16,34,.95),rgba(4,7,16,.96))}
+select option{background:#060a16}
+footer{background:rgba(3,6,14,.88)}
+/* Scan page windows: drag the title bar to rearrange */
+.wins .win-h{cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none}
+.wins .win-h button,.wins .win-h .btns{cursor:pointer}
+.wins{position:relative;align-items:start}   /* each window keeps its own height */
+.wins .win{position:relative}
+.wins .win.wide{grid-column:1/-1}
+.wins .win.dragging{z-index:40;cursor:grabbing;box-shadow:0 24px 60px rgba(0,0,0,.7),0 0 0 1px rgba(127,176,255,.35)!important}
+.wins .win.dragging .win-h{cursor:grabbing}
+html.win-moving,html.win-moving *{cursor:inherit}
+html.win-moving .wins{user-select:none}
+.test-badge{font:700 10.5px var(--display);letter-spacing:.12em;color:#fbbf24;border:1px solid rgba(251,191,36,.45);
+  background:rgba(251,191,36,.08);padding:6px 9px;border-radius:9px;white-space:nowrap}
+/* perf */
+.log,.list{contain:content}
+html.no-glass .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* Scan page: no PRO [logo] TOOL header and no tagline (the logo canvas stays in the page, hidden, for the intro's hand-off) */
+.page[data-page="home"] .hero,.page[data-page="home"] .tagline{display:none}
+
+/* ================= minimal: flat black + grey (no space theme) ================= */
+:root,:root[data-mode]{
+  --display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,sans-serif;
+  --violet:#d6d6d6; --blue:#cfcfcf; --cyan:#bdbdbd; --accent:#d4d4d4; --accent-soft:rgba(255,255,255,.1);
+  --grad-btn:#e4e4e4; --grad-text:linear-gradient(#e6e6e6,#e6e6e6);
+  --bg0:#000; --bg1:#0c0c0c; --bg2:#080808; --border:#1f1f1f; --chip:#141414; --chip-h:#1c1c1c; --glass:#0a0a0a;
+  --text:#e6e6e6; --muted:#8a8a8a; --ok:#86c99a; --err:#d98c8c; --warn:#cdb37a;
+}
+body{background:#000!important;font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif}
+#stars,#spot,#intro,.spark,.logo-wrap .ring,#bootCv{display:none!important}
+#boot.run{background:#000}
+.glass,header.glass-bar,.panel,.win,.stat{background:#0c0c0c!important;border:1px solid #1f1f1f!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+.glass::before,.glass::after{display:none!important}
+header.glass-bar{background:rgba(6,6,6,.97)!important}
+.panel.glass,.win.glass{border-radius:14px}
+.stat.glass{border-radius:12px}
+.tilt,.tilt.live{transform:none!important}
+.page .stat,.page .panel,.page .win{translate:none!important}
+.stat::after{background:#232323!important;opacity:1}
+.stat b,.stat.ok b,.log .ok{text-shadow:none!important}
+.stat span::before,.win-h>i,.dot,.status[data-k="run"] .dot{box-shadow:none!important}
+.stat{--c:#8a8a8a} .stat.tk,.win[data-w="taken"]{--c:#8a8a8a} .win[data-w="sys"]{--c:#bdbdbd}
+.btn{border-color:#262626}
+.btn.primary,#runBtn,.chips button.on{background:#e4e4e4!important;color:#000!important;border-color:transparent!important;box-shadow:none!important;filter:none!important}
+.btn.primary:hover:not(:disabled),#runBtn:hover{background:#fff!important}
+#runBtn.stop{background:transparent!important;color:#e6e6e6!important;border:1px solid #444!important}
+.v2{background:#1f1f1f!important;color:#aaa!important}
+.tog input:checked{background:#d4d4d4!important} .tog input:checked::after{background:#000}
+input:focus,select:focus,textarea:focus{border-color:#4a4a4a!important;box-shadow:none!important}
+.bar i{background:#d4d4d4!important;box-shadow:none!important}
+nav button{font-family:var(--display);color:#8a8a8a} nav button.on,nav button:hover{color:#fff}
+nav .dia{border-color:#5a5a5a!important} nav button.on .dia{background:#ddd!important;border-color:#ddd!important;box-shadow:none!important}
+.logo svg,.f-brand .logo svg{filter:none!important}
+a,.link,.val,.est b,.msg.info{color:#cfcfcf}
+h1{font-weight:600;letter-spacing:.01em} h2{font-weight:600;letter-spacing:.06em}
+.scanning #runBtn,.scanning .stat.ok b{animation:none!important}
+.status{background:#0c0c0c!important;border-color:#1f1f1f!important;font-family:var(--display)}
+.win.flash{box-shadow:0 0 0 1px #555!important}
+#found div.new{animation:newRowGrey 2s ease-out}
+@keyframes newRowGrey{0%{background:rgba(255,255,255,.09)}100%{background:transparent}}
+.palette,.modal,.toast{background:#0e0e0e!important;border:1px solid #222!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.palette li.sel{background:#1c1c1c!important}
+.test-badge{color:#cfcfcf;border-color:#444;background:#141414;font-family:var(--display)}
+/* ---------- left sidebar (was the top bar), opened/closed with the 3-bar button */
+:root{--side:228px}
+#navToggle{position:fixed;top:14px;left:14px;z-index:45;width:36px;height:36px;border-radius:9px;border:1px solid #262626;
+  background:#0c0c0c;color:#d8d8d8;display:grid;place-items:center;padding:0;cursor:pointer;transition:background .15s,border-color .15s}
+#navToggle:hover{background:#161616;border-color:#3a3a3a}
+#navToggle svg{width:18px;height:18px}
+html.in-app #navToggle{top:46px}
+header.glass-bar{position:fixed!important;top:0!important;left:0;bottom:0;width:var(--side);max-width:none!important;margin:0!important;
+  border-radius:0!important;border-width:0 1px 0 0!important;flex-direction:column;flex-wrap:nowrap!important;align-items:stretch;gap:4px;
+  padding:66px 12px 14px!important;z-index:30;overflow-y:auto;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+html.in-app header.glass-bar{top:34px!important}
+header.glass-bar .logo{padding:0 8px 16px;order:0}
+header.glass-bar nav{order:1;flex:0 0 auto!important;flex-direction:column;justify-content:flex-start!important;gap:2px;overflow:visible;flex-basis:auto!important}
+header.glass-bar nav button{width:100%;justify-content:flex-start;padding:9px 10px;border-radius:8px;font-size:14px}
+header.glass-bar nav button.on{background:#161616}
+header.glass-bar nav button:hover{background:#111}
+header.glass-bar nav .dia{display:none}
+header.glass-bar .bar-r{order:2;margin-top:auto;flex-direction:column;align-items:stretch;gap:8px;padding-top:14px}
+header.glass-bar .bar-r .status,header.glass-bar #runBtn{justify-content:center;text-align:center}
+header.glass-bar .test-badge{text-align:center}
+header.glass-bar #paletteBtn,header.glass-bar #persBtn{order:3;margin-top:8px}
+header.glass-bar #paletteBtn{width:auto}
+header.glass-bar .side-tools{order:3}
+.app{padding-left:var(--side);transition:padding-left .25s cubic-bezier(.2,.8,.2,1)}
+html.nav-closed header.glass-bar{transform:translateX(-100%)}
+html.nav-closed .app{padding-left:0}
+html.nav-closed main{padding-top:64px}
+@media (max-width:900px){
+  .app{padding-left:0}
+  main{padding-top:64px}
+  header.glass-bar{box-shadow:0 0 40px rgba(0,0,0,.8)!important}
+}
+@media (prefers-reduced-motion:reduce){header.glass-bar,.app{transition:none}}
+/* sharp edges on every window, panel, card and pop-up */
+.panel,.panel.glass,.win,.win.glass,.stat,.stat.glass,.glass,header.glass-bar,.modal,.palette,.toast,.log,.list,
+.wins .win,.lk-warn-box,dialog{border-radius:0!important}
+.nav-badge{margin-left:auto;font:600 11px var(--display);color:#d98c8c;background:#1a1212;border:1px solid #3a2222;padding:1px 7px;border-radius:0}
+header.glass-bar nav button{display:flex;align-items:center}
+.page-win .log{height:calc(100vh - 230px);min-height:260px}
+html.in-app .page-win .log{height:calc(100vh - 264px)}
+html{background:#000}
+html.in-app #titlebar{background:#000!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-bottom-color:#141414!important}
+.rate .sf{color:#d4d4d4} .rate .se{color:#6b6b6b} .star.on{color:#e4e4e4;text-shadow:none} .star:hover{color:#e4e4e4}
+.warn-note{border-color:#2a2a2a;background:#101010}
+select option{background:#0c0c0c}
+footer{background:#050505}
+.wins .win.dragging{box-shadow:0 20px 50px rgba(0,0,0,.8),0 0 0 1px #444!important}
+</style>
+</head>
+<body>
+<div id="boot" aria-hidden="true"><canvas id="bootCv"></canvas></div>
+<!-- the desktop app's own title bar (only shown inside the app window) -->
+<div id="titlebar">
+  <div class="tb-drag pywebview-drag-region">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="13.5" cy="13.5" r="8" fill="url(#lgl)" stroke="url(#lg)" stroke-width="2.4"/><path d="M19.6 19.6 26.2 26.2" stroke="url(#lg)" stroke-width="2.8" stroke-linecap="round"/></svg>
+    <span>Pro Tool</span>
+  </div>
+  <div class="tb-btns">
+    <button id="tbHide" title="Minimize to background" aria-label="Minimize to background"><svg viewBox="0 0 10 10"><path d="M5 1v6.2M2.2 4.6 5 7.4l2.8-2.8"/></svg></button>
+    <button id="tbMin" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 10 10"><path d="M1 5h8"/></svg></button>
+    <button id="tbMax" title="Maximize" aria-label="Maximize"><svg class="i-max" viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx=".6"/></svg><svg class="i-res" viewBox="0 0 10 10"><path d="M3.2 1.5h5.3v5.3M1.5 3.2h5.3v5.3H1.5z"/></svg></button>
+    <button id="tbClose" class="x" title="Close" aria-label="Close"><svg viewBox="0 0 10 10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button>
+  </div>
+</div>
+<div id="intro" role="dialog" aria-label="Intro - scroll to enter">
+  <canvas id="introCv" aria-hidden="true"></canvas>
+  <div class="i-top">PRO&nbsp;TOOL</div>
+  <div class="i-cap">Pro Tool</div>
+  <div class="i-hint"><span class="mouse"><i></i></span>Scroll to enter</div>
+  <div class="i-prog"><i></i></div>
+  <button class="i-skip" id="introSkip">Skip</button>
+</div>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div id="spot" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- slight refraction for the liquid-glass top bar (Chromium browsers; others fall back to plain blur) -->
+  <filter id="refract" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.03" numOctaves="2" seed="7" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="2" result="nb"/>
+    <feDisplacementMap in="SourceGraphic" in2="nb" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+<div class="app">
+  <button id="navToggle" type="button" aria-label="Show or hide the menu" aria-controls="sidebar" aria-expanded="true" title="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <header class="glass glass-bar" id="sidebar">
+    <a class="logo" href="#home" aria-label="Pro Tool home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff"/></linearGradient><radialGradient id="lgl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".09"/><stop offset="1" stop-color="#fff" stop-opacity=".09"/></radialGradient></defs>
+        <circle cx="13.5" cy="13.5" r="8" fill="url(#lgl)" stroke="url(#lg)" stroke-width="2.2"/><path d="M19.6 19.6 26.2 26.2" stroke="url(#lg)" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      <span>Pro Tool</span><b class="v2">v2</b>
+    </a>
+    <nav id="nav"></nav>
+    <div class="side-tools" style="display:flex;gap:6px;margin-top:10px">
+    <button class="kbd-hint" id="paletteBtn" title="Command palette">Ctrl K</button>
+    <button class="kbd-hint gear" id="persBtn" title="Personalization" aria-label="Personalization"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+    <div class="bar-r">
+      <span class="test-badge" id="testBadge" hidden title="Test mode is on: names are generated, not checked">TEST MODE</span>
+      <div class="status" id="status" data-k="idle"><i class="dot"></i><span class="txt">Idle</span></div>
+      <button class="btn primary" id="runBtn" data-act="start">Start scan</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- SCAN -->
+    <section class="page" data-page="home">
+      <div class="hero" aria-hidden="true">
+        <div class="word l">PRO</div>
+        <div class="logo-wrap"><i class="ring"></i><i class="ring"></i><i class="ring"></i><canvas id="heroLogo"></canvas></div>
+        <div class="word r">TOOL</div>
+      </div>
+      <p class="tagline">Find <b>available Discord usernames</b> automatically.</p>
+
+      <div class="stats">
+        <div class="stat glass"><b id="sChecked">0</b><span>Checked</span></div>
+        <div class="stat glass ok"><b id="sAvail">0</b><span>Available</span></div>
+        <div class="stat glass tk"><b id="sTaken">0</b><span>Taken</span></div>
+        <div class="stat glass err"><b id="sErr">0</b><span>Errors</span></div>
+      </div>
+
+      <div class="panel glass">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <button class="btn" data-act="pause" disabled>Pause</button>
+          <div class="acctpick">
+            <span>Account</span>
+            <select id="acctSel" title="Switch account - works while a scan is running"></select>
+            <button class="btn sm" id="cycleBtn" title="Next usable saved account">Next</button>
+          </div>
+        </div>
+        <div class="bar" id="bar"><i></i></div>
+        <div class="prog-text" id="progText"><span>Ready.</span></div>
+        <canvas id="speed" class="speed" height="52" title="Checks per minute"></canvas>
+      </div>
+
+      <div class="wintools">
+        <input type="text" id="winFilter" placeholder="Filter all windows…">
+        <label class="tog"><input type="checkbox" data-k="notify"> Notify</label>
+        <label class="tog"><input type="checkbox" data-k="sound"> Sound</label>
+        <button class="btn sm" id="winReset" style="margin-left:auto" title="Put the windows back to how they started">Reset layout</button>
+      </div>
+      <div class="wins">
+        <div class="win glass" data-w="ok">
+          <div class="win-h"><i></i><h2>Available</h2><span class="cnt" id="cntOk">0</span>
+            <div class="btns"><button class="btn sm" id="copyFound">Copy all</button><button class="btn sm" data-clear="ok">Clear</button></div></div>
+          <div class="list" id="found"></div>
+        </div>
+        <div class="win glass" data-w="taken">
+          <div class="win-h"><i></i><h2>Taken</h2><span class="cnt" id="cntTaken">0</span>
+            <div class="btns"><button class="btn sm" data-clear="taken">Clear</button></div></div>
+          <div class="log" id="takenLog"></div>
+        </div>
+        <div class="win glass" data-w="test" id="testWin" hidden>
+          <div class="win-h"><i></i><h2>Test names</h2><span class="cnt" id="cntTest">0</span>
+            <div class="btns"><div class="chips" id="testSort" title="Order"><button data-v="new" class="on">Newest</button><button data-v="best">Best rated</button></div>
+              <button class="btn sm" id="copyTest">Copy all</button><button class="btn sm" data-clear="test">Clear</button></div></div>
+          <div class="list" id="testList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTIVITY (the scanner's log) -->
+    <section class="page" data-page="activity">
+      <h1>Activity</h1><p class="sub">Everything the scanner is doing, as it happens.</p>
+        <div class="win glass page-win" data-w="sys">
+          <div class="win-h"><i></i><h2>Activity</h2><span class="cnt" id="cntSys">0</span>
+            <div class="btns"><button class="btn sm" data-clear="sys">Clear</button></div></div>
+          <div class="log" id="sysLog"></div>
+        </div>
+    </section>
+
+    <!-- ERRORS -->
+    <section class="page" data-page="errors">
+      <h1>Errors</h1><p class="sub">Names that couldn't be checked. Retry them from here once a scan has finished.</p>
+        <div class="win glass page-win" data-w="err">
+          <div class="win-h"><i></i><h2>Errors</h2><span class="cnt" id="cntErr">0</span>
+            <div class="btns"><button class="btn sm" id="retryBtn" data-act="retry" hidden>Retry</button><button class="btn sm" data-clear="err">Clear</button></div></div>
+          <div class="log" id="errLog"></div>
+        </div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="page" data-page="search">
+      <h1>Search</h1><p class="sub">What to look for. Changes save automatically.</p>
+      <div class="panel glass presets">
+        <h2>Presets</h2>
+        <div class="row" style="align-items:center">
+          <select id="presetSel" style="flex:1 1 200px"></select>
+          <button class="btn sm" id="presetLoad">Load</button>
+          <button class="btn sm danger" id="presetDel">Delete</button>
+          <span class="sep"></span>
+          <input type="text" id="presetName" maxlength="40" placeholder="Name this search…" style="flex:1 1 200px">
+          <button class="btn sm primary" id="presetSave">Save</button>
+        </div>
+        <p class="note">Saves only the settings on this page.</p>
+      </div>
+      <div class="panel glass">
+        <div class="est" id="estimate">…</div>
+        <div class="examples" id="examples"></div>
+      </div>
+      <div class="grid">
+        <div class="panel glass">
+          <h2>Length</h2>
+          <div class="row">
+            <label class="field"><span>From</span><input type="number" min="2" max="32" data-k="min"></label>
+            <label class="field"><span>To</span><input type="number" min="2" max="32" data-k="max"></label>
+          </div>
+          <div class="field" style="margin-top:14px"><span>Order</span>
+            <div class="chips" data-chips="mode"><button data-v="shortest">Shortest first</button><button data-v="random">Random</button></div></div>
+        </div>
+        <div class="panel glass">
+          <h2>Characters</h2>
+          <label class="tog"><input type="checkbox" data-k="letters"> Letters a-z</label>
+          <label class="tog"><input type="checkbox" data-k="digits"> Digits 0-9</label>
+          <label class="tog"><input type="checkbox" data-k="underscore"> Underscore _</label>
+          <label class="tog"><input type="checkbox" data-k="period"> Period .</label>
+        </div>
+        <div class="panel glass">
+          <h2>Must contain</h2>
+          <label class="field"><span>Text in every name</span><input type="text" data-k="must" placeholder="e.g. cat"></label>
+          <div class="field" style="margin-top:12px"><span>Where</span>
+            <div class="chips" data-chips="place"><button data-v="any">Anywhere</button><button data-v="start">Start</button><button data-v="end">End</button></div></div>
+        </div>
+        <div class="panel glass" id="builderPanel">
+          <h2>Word builder</h2>
+          <label class="tog"><input type="checkbox" data-k="build_on"> Build names from words + prefixes and suffixes</label>
+          <label class="field" style="margin-top:12px"><span>Base words (leave empty to use your word list)</span>
+            <input type="text" data-k="build_bases" maxlength="500" placeholder="e.g. shadow, nova, flux"></label>
+          <label class="field" style="margin-top:10px"><span>Prefixes (go in front)</span>
+            <input type="text" data-k="build_pre" maxlength="500" placeholder="e.g. neo, pro, ultra"></label>
+          <label class="field" style="margin-top:10px"><span>Suffixes (go after)</span>
+            <input type="text" data-k="build_suf" maxlength="500" placeholder="e.g. er, ly, ify"></label>
+          <label class="field" style="margin-top:10px"><span>Either side (used as prefix and suffix)</span>
+            <input type="text" data-k="build_aff" maxlength="500" placeholder="e.g. x, z, o"></label>
+          <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="build_plain"> Also check the plain base words</label>
+          <p class="note">Makes <i>prefix+word</i>, <i>word+suffix</i> and <i>prefix+word+suffix</i> (e.g. nova &rarr; neonova, novaly, neonovaly).
+            Names are picked at random from all the combinations, so every scan goes in a new order.
+            With no base words typed, it uses the words from Real words or Describe the names. Separate parts with commas or spaces.</p>
+        </div>
+        <div class="panel glass" id="describePanel">
+          <h2>Describe the names</h2>
+          <label class="field"><span>Words that describe the kind of names you want</span>
+            <input type="text" id="descText" data-k="describe" maxlength="300" placeholder="e.g. dark, ocean, fast"></label>
+          <div class="btns" style="margin-top:10px"><button class="btn primary sm" id="descGo">Find words</button><button class="btn sm" id="descOff">Turn off</button></div>
+          <p class="msg" id="descMsg"></p>
+          <div class="examples" id="descWords"></div>
+          <p class="note">Finds words related to yours (for example <i>ocean</i> &rarr; <i>tide, abyss, marine</i>) and scans names made from them. Your describing words are sent to Datamuse, a free word service, to look them up.</p>
+        </div>
+        <div class="panel glass">
+          <h2>Real words</h2>
+          <label class="field"><span>Dictionary</span><select id="langSel"></select></label>
+          <div class="row" style="margin-top:12px" id="wordsRow">
+            <label class="field"><span>Words per name, from</span><input type="number" min="1" max="8" data-k="wmin"></label>
+            <label class="field"><span>to</span><input type="number" min="1" max="8" data-k="wmax"></label>
+          </div>
+          <div class="msg" id="dictMsg"></div>
+        </div>
+        <div class="panel glass">
+          <h2>Speed</h2>
+          <div class="row">
+            <label class="field"><span>Delay from (ms)</span><input type="number" step="100" min="200" data-k="dmin" data-scale="1000"></label>
+            <label class="field"><span>to (ms)</span><input type="number" step="100" min="200" data-k="dmax" data-scale="1000"></label>
+          </div>
+          <p class="note">A random delay in this range, in milliseconds, is used between checks (1000 ms = 1 second).</p>
+        </div>
+        <div class="panel glass">
+          <h2>Stopping</h2>
+          <label class="field"><span>Stop after finding (0 = never)</span><input type="number" min="0" data-k="stop_after"></label>
+          <label class="tog" style="margin-top:8px"><input type="checkbox" data-k="skip_known"> Skip names already checked</label>
+          <div class="field" style="margin-top:12px;margin-bottom:0"><span>Only make names rated (out of 10)</span></div>
+          <div class="row">
+            <label class="field"><span>From</span><select data-k="min_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+            <label class="field"><span>To</span><select data-k="max_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+          </div>
+          <p class="note" style="margin-top:6px">Set both to the same number for only that rating (e.g. 10 to 10 = only 10/10 names). 0 to 10 = any.
+            Names outside the range are skipped without being checked (lists you paste are always checked). The possible-names count above still includes them.</p>
+          <div class="row" style="align-items:center;margin-top:2px"><span class="note" id="histInfo" style="margin:0"></span>
+            <button class="link" id="forgetHist">Forget</button></div>
+        </div>
+      </div>
+      <div class="panel glass">
+        <h2>Check your own list</h2>
+        <textarea id="nameList" rows="6" placeholder="One name per line (or separated by commas / spaces)"></textarea>
+        <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
+          <span class="note" id="nameCount" style="margin:0">0 names</span>
+          <button class="btn primary" id="checkListed">Check these names</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="page" data-page="account">
+      <h1>Accounts</h1><p class="sub">Tokens stay on this PC, encrypted with Windows, and are never shown again in full.</p>
+      <div class="panel glass">
+        <div id="tokState" class="note" style="margin:0 0 10px"></div>
+        <div class="row">
+          <label class="field" style="flex:3 1 260px"><span>Token</span><input type="password" id="tokIn" autocomplete="off" placeholder="Paste a token"></label>
+          <label class="field" style="flex:1 1 140px"><span>Label (to save it)</span><input type="text" id="acctLabel" maxlength="30" placeholder="e.g. Alt 1"></label>
+        </div>
+        <div class="btns" style="margin-top:12px">
+          <button class="btn sm primary" id="tokSet">Use</button>
+          <button class="btn sm" id="acctAdd">Save to list</button>
+          <button class="btn sm" id="tokTest">Test</button>
+        </div>
+        <div class="msg" id="tokMsg"></div>
+        <p class="note" style="margin-top:14px">Need another account? Sign up on Discord in your browser (you solve the captcha yourself), then copy its token from Discord and paste it above.</p>
+        <div class="btns" style="margin-top:10px">
+          <a class="btn sm" id="signupBtn" target="_blank" rel="noopener noreferrer">Create account on Discord <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--cyan)" stroke-width="2.2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <button class="btn sm" id="tokHelpBtn">How to get a token</button>
+        </div>
+      </div>
+
+      <dialog id="tokHelp" class="glass modal">
+        <div class="modal-h"><h2>Getting your token</h2><button class="x" id="tokHelpClose" aria-label="Close">×</button></div>
+        <ol class="steps">
+          <li>Open <a href="https://discord.com/app" target="_blank" rel="noopener noreferrer">discord.com/app</a> in your browser and log in to the account you want to use.</li>
+          <li>Press <kbd>F12</kbd> (or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>) to open Developer Tools, then click the <b>Network</b> tab.</li>
+          <li>In the filter box, type <code>api</code>. Then click any channel or server in Discord so requests show up.</li>
+          <li>Click one of the requests to <code>discord.com/api/…</code> and open <b>Headers</b>.</li>
+          <li>Under <b>Request Headers</b>, find <code>authorization</code>. Its value is the token - copy it.</li>
+          <li>Paste it in the Token box here, give it a label and press <b>Save to list</b>.</li>
+        </ol>
+        <div class="warn-note">Your token is a full login to that account. Never share it, and never paste code someone sends you into the browser console - that's how accounts get stolen. Logging out of Discord resets the token.</div>
+      </dialog>
+      <div class="panel glass">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="margin:0">Saved accounts</h2>
+          <div class="btns">
+            <button class="btn sm" id="acctTestAll">Test all</button>
+            <label class="btn sm">Import .txt…<input type="file" id="acctFile" accept=".txt,.lst,.csv" hidden></label>
+          </div>
+        </div>
+        <div id="accts"></div>
+        <p class="note">Import a .txt with one token per line (or <code>label|token</code>). Tokens already saved are skipped.</p>
+        <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="auto_switch"> Switch automatically when an account is rate limited</label>
+      </div>
+    </section>
+
+    <!-- WEBHOOK -->
+    <section class="page" data-page="webhook">
+      <h1>Webhook</h1><p class="sub">Get a Discord message when a name is found.</p>
+      <div class="panel glass">
+        <label class="field"><span>Webhook URL</span><input type="url" id="hookUrl" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></label>
+        <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="hook_on"> Message me for every available name</label>
+        <label class="tog"><input type="checkbox" data-k="hook_done"> Send a summary when a scan ends</label>
+        <div class="btns" style="margin-top:12px"><button class="btn sm primary" id="hookSave">Save</button><button class="btn sm" id="hookTest">Send test</button></div>
+        <div class="msg" id="hookMsg"></div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="page" data-page="results">
+      <h1>Results</h1><p class="sub" id="resFile">Every available name ever found.</p>
+      <div class="panel glass">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="row" style="align-items:center;gap:10px">
+            <input type="text" id="resFilter" placeholder="Filter…" style="max-width:240px">
+            <div class="chips" id="resStars" title="Show only names rated at least this (out of 10)">
+              <button data-stars="-1" class="on">Any</button><button data-stars="10">10</button><button data-stars="9">9+</button><button data-stars="8">8+</button><button data-stars="7">7+</button><button data-stars="6">6+</button>
+            </div>
+          </div>
+          <div class="btns"><span id="resCount" class="note" style="margin:0 6px 0 0;align-self:center"></span><button class="btn sm" id="resCopy">Copy all</button><a class="btn sm" href="/api/results?download=1">Download .txt</a></div>
+        </div>
+        <div class="list" id="results" style="height:520px"></div>
+      </div>
+    </section>
+
+    <!-- PERSONALIZATION (opened from the footer) -->
+    <section class="page" data-page="personal">
+      <h1>Personalization</h1><p class="sub">Make it yours. Changes apply instantly and are saved.</p>
+      <div class="grid">
+        <div class="panel glass" id="pColour" hidden>
+          <h2>Accent colour</h2>
+          <div class="swatches" id="swatches"></div>
+          <div class="hue"></div>
+          <input type="range" min="0" max="359" step="1" id="uHue" aria-label="Accent hue">
+          <div class="row" style="margin-top:14px;align-items:center"><button class="btn primary sm" tabindex="-1">Preview</button><span class="note" style="margin:0">Buttons, glow, logo and stars follow this colour.</span></div>
+        </div>
+        <div class="panel glass">
+          <h2>Test mode</h2>
+          <label class="tog"><input type="checkbox" data-k="test_mode"> Generate usernames without a token</label>
+          <p class="note">Start runs the name generator with your Search settings and lists the names, rated, on the Scan tab. No token is needed: nothing is checked with Discord, nothing is saved to your results or history, and no webhooks or notifications are sent. Applies the next time you press Start.</p>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <div class="panel glass" id="updPanel">
+          <h2>Updates</h2>
+          <p class="note" style="margin-top:0">You have Pro Tool <b id="updVer">v-</b>. It checks for updates each time it opens.</p>
+          <div class="btns" style="margin-top:10px"><button class="btn sm" id="updCheck">Check for updates</button></div>
+          <p class="msg" id="updMsg"></p>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;align-items:center" hidden>
+        <button class="btn sm" id="uReset">Reset to defaults</button>
+      </div>
+    </section>
+  </main>
+
+</div>
+<dialog id="bgAsk" class="glass modal" aria-labelledby="bgAskTitle">
+  <div class="modal-h"><h2 id="bgAskTitle">Minimize to background?</h2><button class="x" id="bgAskX" aria-label="Close">×</button></div>
+  <p class="note" style="font-size:14px;margin:10px 0 18px">Pro Tool will keep running in the background. Scans carry on and found names still pop up as notifications. To bring it back, click the Pro Tool icon by the clock in the taskbar.</p>
+  <div class="btns" style="justify-content:flex-end"><button class="btn" id="bgAskNo">Cancel</button><button class="btn primary" id="bgAskYes">Minimize to background</button></div>
+</dialog>
+<dialog id="updAsk" class="glass modal" aria-labelledby="updTitle">
+  <div class="modal-h"><h2 id="updTitle">Update available</h2><button class="x" id="updX" aria-label="Close">×</button></div>
+  <p class="note" id="updTxt" style="font-size:14px;margin:10px 0 8px"></p>
+  <div class="note" id="updNotes" style="white-space:pre-wrap;margin:0 0 14px;padding:10px 12px;border:1px solid var(--border);max-height:220px;overflow:auto" hidden></div>
+  <p class="msg" id="updAskMsg"></p>
+  <div class="btns" style="justify-content:flex-end"><button class="btn" id="updLater">Later</button><button class="btn primary" id="updNow">Update now</button></div>
+</dialog>
+<dialog id="palette" class="glass palette" aria-label="Command palette">
+  <input id="palIn" placeholder="Type a command…" autocomplete="off" spellcheck="false">
+  <ul id="palList"></ul>
+</dialog>
+<div class="toast" id="toast"></div>
+<div class="tok-alert" id="tokAlert" role="alert" hidden><b>&#9888; Token not working</b><span class="txt" id="tokAlertTxt"></span>
+  <span class="acts"><button id="tokAlertGo">Open Accounts</button><button id="tokAlertX">Dismiss</button></span></div>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const TABS = [["home","Scan"],["search","Search"],["account","Accounts"],["webhook","Webhook"],["results","Results"],["activity","Activity"],["errors","Errors"]];
+let CFG = null, S = {}, seq = 0, logLines = [], running = false;
+let FAVS = new Set();                 // starred names (lower-case), pinned at the top of Results
+let winFilter = "";                   // Scan-page search box text
+let foundList = [];                   // latest available names from the server
+let foundInit = false;                // true after the first poll (so page-load finds don't re-notify)
+
+// ---- name rating: a 0-10 score with reasons, computed in the browser (same rules as name_rating in dsv_web.py)
+const VOWELS = "aeiouy";
+function rate(name){
+  const why = [], n = name.length;
+  let score = n <= 3 ? 4 : n <= 5 ? 3 : n <= 7 ? 2 : n <= 9 ? 1 : 0;
+  why.push(n <= 5 ? "short" : n <= 9 ? "medium length" : "long");
+  const digits = (name.match(/[0-9]/g) || []).length, marks = (name.match(/[._]/g) || []).length;
+  score += digits === 0 ? 2 : digits === 1 ? 1 : 0; why.push(digits ? digits + " digit" + (digits > 1 ? "s" : "") : "no digits");
+  score += marks === 0 ? 2 : marks === 1 ? 1 : 0; if (marks) why.push(marks + " dot/underscore"); else why.push("letters only");
+  let longest = 0, run = 0, last = null;   // longest run of consonants or of vowels (other characters break a run)
+  for (const ch of name) {
+    const kind = ch >= "a" && ch <= "z" ? (VOWELS.includes(ch) ? "v" : "c") : null;
+    run = kind && kind === last ? run + 1 : (kind ? 1 : 0); last = kind;
+    longest = Math.max(longest, run);
+  }
+  const hasVowel = [...name].some(ch => VOWELS.includes(ch));
+  if (hasVowel && longest < 5) { score += 1; why.push("easy to say"); }
+  if (hasVowel && longest < 3) { score += 1; why.push("flows well"); }
+  return {score, why};
+}
+function stars(score){   // the rating out of 10 (no stars)
+  return `<b class="sf">${score}</b><i class="se">/10</i>`;
+}
+let resStarsPick = -1;   // Results tab: show only names rated at least this (-1 = any)
+
+// ---- desktop notifications (feature 2)
+function notify(name){
+  if (document.documentElement.classList.contains("in-app")) return;   // the desktop app sends real Windows notifications
+  if (S.notify === false || !("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
+  try { new Notification("Username available", {body: name, tag: "dsv-" + name, silent: S.sound === false}); } catch(e) {}
+}
+// ---- soft chime (shared by notify + in-page finds)
+let AC = null;
+function chime(){
+  if (S.sound === false) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t = AC.currentTime;
+    [880, 1320].forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain();
+      o.frequency.value = f; o.connect(g); g.connect(AC.destination);
+      g.gain.setValueAtTime(0.0001, t + i*.08); g.gain.exponentialRampToValueAtTime(.12, t + i*.08 + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + i*.08 + .3); o.start(t + i*.08); o.stop(t + i*.08 + .32); });
+  } catch(e) {}
+}
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtN = n => Number(n).toLocaleString();
+function fmtDur(s){ s=Math.round(s); if(s<60) return s+"s"; if(s<3600) return Math.floor(s/60)+"m "+(s%60)+"s";
+  if(s<86400) return Math.floor(s/3600)+"h "+Math.floor(s%3600/60)+"m"; return Math.floor(s/86400)+"d "+Math.floor(s%86400/3600)+"h"; }
+function toast(t, err){ const el=$("#toast"); el.textContent=t; el.className="toast show"+(err?" err":""); clearTimeout(toast.t); toast.t=setTimeout(()=>el.className="toast",2600); }
+async function api(path, body){
+  const r = await fetch(path, body===undefined ? {} : {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if (r.status === 403) { toast("Access denied - open the link printed in the Pro Tool window", true); throw new Error("403"); }
+  return r.json();
+}
+async function act(path, body, okMsg){
+  const r = await api(path, body||{});
+  if (r.ok === false && r.error) toast((r.title ? r.title+": " : "")+r.error, true);
+  else if (r.msg) toast(r.msg, r.ok===false); else if (okMsg) toast(okMsg);
+  return r;
+}
+function setMsg(el, text, kind){ el.textContent = text||""; el.className = "msg "+(kind||"muted"); }
+
+// ---------- navigation
+function buildNav(){
+  const nav = $("#nav");
+  nav.innerHTML = TABS.map(t => `<button data-tab="${t[0]}">${t[1]}${t[0] === "errors" ? '<span class="nav-badge" id="navErrCnt" hidden></span>' : t[0] === "account" ? '<span class="nav-badge warn" id="navTokCnt" title="Tokens not working" hidden></span>' : ""}<i class="dia"></i></button>`).join("");
+  nav.onclick = e => { const b = e.target.closest("button[data-tab]"); if (b) show(b.dataset.tab); };
+}
+function show(tab){
+  if (!$(`.page[data-page="${tab}"]`)) tab = "home";
+  $$(".page").forEach(p => p.classList.toggle("on", p.dataset.page === tab));
+  $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  try { localStorage.setItem("dsv_tab", tab); } catch(e) {}
+  window.scrollTo(0, 0);
+  if (location.hash !== "#"+tab) history.replaceState(null, "", "#"+tab);
+  if (tab === "results") loadResults();
+  if (tab === "search") estimate();
+  if (tab === "activity" || tab === "errors") { const l = $(tab === "errors" ? "#errLog" : "#sysLog"); l.scrollTop = l.scrollHeight; }   // newest lines in view
+  stagger(tab);                                                   // v2: cards rise in one after another
+  const b = $(`nav button[data-tab="${tab}"]`), nav = $("#nav");   // keep the active tab visible inside the nav only
+  if (b && (b.offsetLeft < nav.scrollLeft || b.offsetLeft + b.offsetWidth > nav.scrollLeft + nav.clientWidth))
+    nav.scrollLeft = b.offsetLeft - nav.clientWidth / 2 + b.offsetWidth / 2;
+}
+
+// ---------- settings binding
+function fillSettings(){
+  $$("[data-k]").forEach(el => {
+    const v = S[el.dataset.k]; if (v === undefined) return;
+    if (el.type === "checkbox") el.checked = !!v;
+    else if (document.activeElement !== el) el.value = el.dataset.scale && v !== "" && isFinite(v) ? Math.round(v * el.dataset.scale) : v;   // delays are saved in seconds, shown in ms
+  });
+  $$("[data-chips]").forEach(c => c.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[c.dataset.chips])));
+  applyTheme();
+  testBadge();
+}
+function testBadge(){ const b = $("#testBadge"); if (b) b.hidden = !(S && S.test_mode); try { testKey = ""; renderTest(); } catch (e) {} }   // shows while test mode is on
+let saveT = null, pending = {};
+function setSetting(k, v, now){
+  S[k] = v; pending[k] = v;
+  clearTimeout(saveT);
+  saveT = setTimeout(flush, now ? 0 : 350);
+}
+async function flush(){
+  clearTimeout(saveT);
+  if (!Object.keys(pending).length) return;
+  const body = pending; pending = {};
+  await api("/api/settings", body);
+  if (["log_taken","theme"].some(k => k in body) && Object.keys(body).length === 1) { renderLog(); return; }
+  estimate();
+}
+function bindSettings(){
+  $$("[data-k]").forEach(el => {
+    const ev = el.type === "checkbox" || el.type === "color" ? "change" : "input";
+    el.addEventListener(ev, () => {
+      const raw = el.type === "checkbox" ? el.checked : el.value;
+      setSetting(el.dataset.k, el.dataset.scale && raw !== "" && isFinite(raw) ? String(raw / el.dataset.scale) : raw);
+      if ((el.dataset.k === "min_rating" || el.dataset.k === "max_rating") && +S.min_rating > +S.max_rating) {   // keep from <= to
+        const lo = S.max_rating, hi = S.min_rating; setSetting("min_rating", lo); setSetting("max_rating", hi); fillSettings();
+      }
+      if (el.dataset.k === "log_taken") renderLog();
+      if (el.dataset.k === "test_mode") { testBadge(); flush(); }
+    });
+  });
+  $$("[data-chips]").forEach(c => c.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    setSetting(c.dataset.chips, b.dataset.v, true); fillSettings();
+  }));
+}
+function applyTheme(){                 // one look now: black space, accent hue from the saved theme
+  const t = S.theme || {}; const root = document.documentElement;
+  root.dataset.mode = "black";
+  root.style.setProperty("--hue", BLUE_HUE);   // fixed black + dark blue scheme
+  if ($("#uHue")) applyUI();
+}
+
+// ---------- personalization (look & motion)
+const BLUE_HUE = 218;
+const SWATCH_HUES = [175, 265, 210, 320, 0, 30, 140, 50];
+function loadUI(){ UI = {...UI_DEFAULTS, ...(CFG && CFG.settings.ui || {})};
+  try { localStorage.setItem("dsv_intro", UI.intro ? "1" : "0"); localStorage.setItem("dsv_spin", UI.spin); } catch(e) {}
+  applyUI(); }
+function applyUI(){
+  document.documentElement.style.setProperty("--gs", UI.glass);
+  document.documentElement.classList.toggle("no-glass", +UI.glass === 0);   // perf: no blur to compute
+  const hue = Math.round((S.theme || {}).hue ?? 175);
+  $$('[data-ui]').forEach(el => {
+    const k = el.dataset.ui;
+    if (el.type === "checkbox") el.checked = !!UI[k];
+    else if (document.activeElement !== el) el.value = UI[k];
+  });
+  $$(".val").forEach(el => { const k = el.dataset.for; el.textContent = typeof UI[k] === "number" ? (k === "bg" ? Math.round(UI[k]*100)+"%" : UI[k].toFixed(2)) : ""; });
+  if ($("#uHue") && document.activeElement !== $("#uHue")) $("#uHue").value = hue;
+  $$("#swatches button").forEach(b => b.classList.toggle("on", +b.dataset.hue === hue));
+}
+function setUI(k, v){ UI[k] = v; applyUI(); saveUI(); }
+let uiT = null;
+function saveUI(){
+  try { localStorage.setItem("dsv_intro", UI.intro ? "1" : "0"); localStorage.setItem("dsv_spin", UI.spin); } catch(e) {}
+  clearTimeout(uiT); uiT = setTimeout(() => api("/api/settings", {ui: UI}), 300);
+}
+
+// ---------- estimate
+let estT = null;
+function estimate(){
+  clearTimeout(estT);
+  estT = setTimeout(async () => {
+    const r = await api("/api/estimate", {});
+    const el = $("#estimate");
+    if (!r.ok) { el.className = "est err"; el.textContent = r.title + ": " + r.error; $("#examples").innerHTML = ""; return; }
+    el.className = "est";
+    el.innerHTML = `<b>${fmtN(r.total)}</b> possible names${r.built ? ` built from ${fmtN(r.built.bases)} base words` : r.pool!==undefined ? ` from ${fmtN(r.pool)} usable words` : ""} &middot; about <b>${fmtDur(r.eta)}</b> at this speed`;
+    $("#examples").innerHTML = r.examples.map(x => `<code>${esc(x)}</code>`).join("");
+  }, 150);
+}
+
+// ---------- config / secrets
+async function loadConfig(){
+  CFG = await api("/api/config");
+  S = CFG.settings;
+  fillSettings();
+  renderSecrets(CFG.secrets);
+  renderLangs(); renderDict();
+  loadUI();
+  $("#histInfo").textContent = `${fmtN(CFG.history)} names remembered.`;
+  $("#signupBtn").href = CFG.signup_url || "https://discord.com/register";
+  const ps = $("#presetSel"), keep = ps.value;
+  ps.innerHTML = CFG.presets.length ? CFG.presets.map(p => `<option>${esc(p)}</option>`).join("") : '<option value="">No presets yet</option>';
+  if (CFG.presets.includes(keep)) ps.value = keep;
+  ps.disabled = $("#presetLoad").disabled = $("#presetDel").disabled = !CFG.presets.length;
+  FAVS = new Set(CFG.favourites || []);
+}
+function renderSecrets(sec){
+  CFG.secrets = sec;
+  $("#tokState").innerHTML = sec.token_set ? `Current token ends in <code>…${esc(sec.token_tail)}</code>`
+    + (sec.token_bad ? ` <span class="tokwarn">&#9888; not working: ${esc(sec.token_bad)}</span>` : "") : "<span style='color:var(--warn)'>No token set yet.</span>";
+  const nBad = sec.accounts.filter(a => a.bad).length + (sec.token_bad && sec.active < 0 ? 1 : 0), nb = $("#navTokCnt");
+  if (nb) { nb.textContent = nBad; nb.hidden = !nBad; }   // yellow count in the menu
+  if (document.activeElement !== $("#hookUrl")) $("#hookUrl").value = sec.hook || "";
+  const box = $("#accts");
+  box.innerHTML = sec.accounts.length ? sec.accounts.map((a,i) => `
+    <div class="acct ${i===sec.active?"on":""} ${a.bad?"tokbad":""}">
+      <div class="who"><b>${a.bad ? "&#9888; " : ""}${esc(a.label)}</b><small>${a.bad ? `<span class="tokwhy">not working: ${esc(a.why || "rejected")}</span>` : esc(a.name || "not tested")} &middot; …${esc(a.tail)}</small></div>
+      <div class="btns">
+        ${i===sec.active ? '<span class="note" style="margin:0">in use</span>' : `<button class="btn sm" data-a="use" data-i="${i}">Use</button>`}
+        <button class="btn sm" data-a="test" data-i="${i}">Test</button>
+        <button class="btn sm danger" data-a="remove" data-i="${i}">Remove</button>
+      </div>
+    </div>`).join("") : '<div class="empty">No saved accounts yet. Paste a token above, give it a label and press Save to list.</div>';
+  const sel = $("#acctSel");
+  if (document.activeElement !== sel) {
+    let opts = sec.accounts.map((a, i) => `<option value="${i}" ${i === sec.active ? "selected" : ""}>${a.bad ? "&#9888; " : ""}${esc(a.label)}${a.bad ? " (not working)" : a.name ? " - " + esc(a.name) : ""}</option>`).join("");
+    if (sec.active < 0) opts = `<option value="" selected disabled>${sec.token_set ? "Pasted token …" + esc(sec.token_tail) : "No token set"}</option>` + opts;
+    sel.innerHTML = opts || '<option value="">No saved accounts</option>';
+    sel.disabled = !sec.accounts.length;
+  }
+  $("#cycleBtn").disabled = sec.accounts.length < 2 && !(sec.accounts.length === 1 && sec.active < 0);
+}
+function renderLangs(){
+  const sel = $("#langSel"), cur = S.dict_lang || "";
+  let opts = `<option value="">Off - every combination</option>`;
+  if (cur === "file") opts += `<option value="file">${esc(CFG.dict_label)}</option>`;
+  opts += CFG.languages.map(l => `<option value="${l.code}">${esc(l.name)}${l.downloading ? " (downloading…)" : l.downloaded ? "" : " (download)"}</option>`).join("");
+  if (document.activeElement !== sel) { sel.innerHTML = opts; sel.value = cur; }
+  $("#wordsRow").hidden = !cur;
+}
+function renderDict(){ setMsg($("#dictMsg"), S.dict_lang ? CFG.dict_msg.text : "", CFG.dict_msg.kind); }
+
+// ---------- live state
+// each window shows one kind of log line; "Clear" just hides what came before (per window)
+const WINS = {
+  err:   {el: "#errLog",   cnt: "#cntErr",   match: e => e.kind === "err",   empty: "No errors.", text: e => e.text},
+  taken: {el: "#takenLog", cnt: "#cntTaken", match: e => e.kind === "taken", empty: "Taken names show up here.",
+          text: e => e.text.replace(/ +taken$/, "")},
+  sys:   {el: "#sysLog",   cnt: "#cntSys",   match: e => e.kind === "info" || e.kind === "warn", empty: "Press Start to begin.",
+          text: e => e.text},
+};
+const clearedAt = {err: 0, taken: 0, sys: 0, test: 0};
+let logDirty = false;
+function renderLog(){
+  if (document.hidden) { logDirty = true; return; }               // perf: catch up when the window is shown again
+  logDirty = false;
+  for (const [k, w] of Object.entries(WINS)) {
+    const el = $(w.el), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    const all = logLines.filter(e => e.id > clearedAt[k] && w.match(e));
+    const rows = winFilter ? all.filter(e => w.text(e).toLowerCase().includes(winFilter)) : all;
+    const row = e => `<div class="${e.kind}"><span class="t">${e.t}</span>${esc(w.text(e))}</div>`;
+    $(w.cnt).textContent = fmtN(all.length);
+    if (k === "err") { const nb = $("#navErrCnt"); if (nb) { nb.textContent = fmtN(all.length); nb.hidden = !all.length; } }   // count in the menu
+    const key = clearedAt[k] + "|" + winFilter, newest = rows.length ? rows[rows.length - 1].id : 0;
+    if (w._key !== key || !w._last || !rows.length || newest < w._last || rows[0].id > w._last) {   // full redraw
+      el.innerHTML = rows.length ? rows.slice(-500).map(row).join("")
+                                 : `<div class="empty">${winFilter ? "No matches." : w.empty}</div>`;
+      w._key = key; w._last = newest;
+    } else if (newest > w._last) {                                  // just append what's new
+      el.insertAdjacentHTML("beforeend", rows.filter(e => e.id > w._last).map(row).join(""));
+      w._last = newest;
+      for (let extra = el.childElementCount - 500; extra > 0; extra--) el.firstElementChild.remove();
+    }
+    if (atBottom) el.scrollTop = el.scrollHeight;
+  }
+  renderTest();
+}
+// Test names window (Scan tab): every name test mode generates, with its rating out of 10
+let testSort = "new", testKey = "";
+const testNames = () => logLines.filter(e => e.kind === "test" && e.id > clearedAt.test).map(e => e.text);
+function renderTest(){
+  const el = $("#testList"); if (!el) return;
+  const all = testNames(), last = logLines.length ? logLines[logLines.length - 1].id : 0;
+  $("#testWin").hidden = !(S && S.test_mode) && !all.length;          // shows in test mode (or while it has names)
+  const key = [last, all.length, clearedAt.test, testSort, winFilter].join("|");
+  if (key === testKey) return;
+  testKey = key;
+  const scored = (winFilter ? all.filter(n => n.toLowerCase().includes(winFilter)) : all).map(n => [n, rate(n).score]);
+  if (testSort === "best") scored.sort((a, b) => b[1] - a[1] || a[0].length - b[0].length || a[0].localeCompare(b[0]));
+  else scored.reverse();                                                // newest first
+  const avg = all.length ? all.reduce((t, n) => t + rate(n).score, 0) / all.length : 0;
+  $("#cntTest").textContent = all.length ? `${fmtN(all.length)} · avg ${avg.toFixed(1)}/10` : "0";
+  el.innerHTML = scored.length ? scored.slice(0, 500).map(([n]) => foundRow(n)).join("")
+    : `<div class="empty">${winFilter ? "No matches." : "Press Start test: every generated name shows up here with its rating."}</div>`;
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && logDirty) renderLog(); });
+function foundRow(n){
+  const r = rate(n), fav = FAVS.has(n.toLowerCase());
+  return `<div data-name="${esc(n)}"><button class="star ${fav?'on':''}" data-fav="${esc(n)}" title="Favourite">${fav?'★':'☆'}</button>`
+    + `<span>${esc(n)}</span><span class="rate" title="${esc(r.why.join(', '))}">${stars(r.score)}</span>`
+    + `<button data-copy="${esc(n)}">copy</button></div>`;
+}
+function renderFound(found){
+  const rows = winFilter ? found.filter(n => n.toLowerCase().includes(winFilter)) : found;
+  $("#found").innerHTML = rows.length ? rows.slice().reverse().map(foundRow).join("")   // newest first
+    : `<div class="empty">${winFilter ? "No matches." : "Available names show up here."}</div>`;
+}
+// token alerts: a yellow banner (stays until dismissed), the account list refreshes to show the yellow row
+let tokSeen = 0;
+try { tokSeen = +localStorage.getItem("pt_tok_alert_seen") || 0; } catch (e) {}
+const tokShown = [];
+function tokenAlerts(list){
+  const fresh = list.filter(a => a.id > tokSeen);
+  if (!fresh.length) return;
+  tokSeen = Math.max(...fresh.map(a => a.id));
+  try { localStorage.setItem("pt_tok_alert_seen", tokSeen); } catch (e) {}
+  for (const a of fresh) {
+    tokShown.push(`<div><b>${esc(a.label)}</b> (…${esc(a.tail)}): ${esc(a.why)}</div>`);
+    if (S && S.notify !== false && "Notification" in window && Notification.permission === "granted" && document.hidden
+        && !document.documentElement.classList.contains("in-app"))   // the app window gets a Windows notification instead
+      try { new Notification("Token not working", {body: `${a.label} (…${a.tail}): ${a.why}`, tag: "pt-tok-" + a.id}); } catch (e) {}
+  }
+  $("#tokAlertTxt").innerHTML = tokShown.slice(-4).join("");
+  $("#tokAlert").hidden = false;
+  api("/api/config").then(c => { CFG.secrets = c.secrets; renderSecrets(c.secrets); }).catch(() => {});
+}
+let lastFound = "";
+async function poll(){
+  let st;
+  try { st = await api("/api/state?since=" + seq); } catch(e) { setStatus("Server offline", "err"); return setTimeout(poll, 2500); }
+  if (st.seq < seq) { logLines = []; seq = 0; return poll(); }  // server restarted / log cleared
+  if (st.log.length) { logLines.push(...st.log); logLines = logLines.slice(-1500); seq = st.seq; renderLog(); }
+  running = st.running;
+  setStatus(st.status, st.running ? (st.status_kind === "idle" ? "run" : st.status_kind) : st.status_kind);
+  roll($("#sChecked"), st.stats.checked); roll($("#sAvail"), st.stats.available);   // v2: numbers count up
+  roll($("#sTaken"), st.stats.taken); roll($("#sErr"), st.stats.errors);
+  document.documentElement.classList.toggle("scanning", st.running && !st.paused);   // v2: pulse rings + live glow
+  const rb = $("#runBtn");                          // one button in the top bar: Start <-> Stop
+  rb.dataset.act = st.running ? "stop" : "start";
+  const test = S && S.test_mode;
+  rb.textContent = st.running ? (test ? "Stop test" : "Stop scan") : (test ? "Start test" : "Start scan");
+  rb.classList.toggle("stop", st.running);
+  $$('[data-act="pause"]').forEach(b => { b.disabled = !st.running; b.textContent = st.paused ? "Resume" : "Pause"; });
+  $("#retryBtn").hidden = st.running || !st.errors_pending;
+  $("#checkListed").disabled = st.running;
+  const bar = $("#bar"), frac = st.total ? Math.min(1, st.stats.checked / st.total) : 0;
+  bar.classList.toggle("indef", st.running && !st.stats.checked);
+  bar.firstElementChild.style.width = (st.running || st.stats.checked ? frac*100 : 0) + "%";
+  const parts = [];
+  if (st.total) parts.push(`${fmtN(st.stats.checked)} / ${fmtN(st.total)} (${(frac*100).toFixed(frac<0.01?2:1)}%)`);
+  if (st.elapsed) parts.push("Elapsed " + fmtDur(st.elapsed));
+  if (st.running && st.eta) parts.push("ETA ~" + fmtDur(st.eta));
+  if (st.running && st.pace) parts.push(st.pace.toFixed(2) + " s/check");
+  if (st.account) parts.push("Account: " + esc(st.account) + (st.switches ? ` (${st.switches} auto-switch${st.switches > 1 ? "es" : ""})` : ""));
+  if (CFG && CFG.secrets && st.active !== CFG.secrets.active)   // switched (automatically or elsewhere): refresh the list
+    (CFG.secrets.active = st.active, api("/api/config")).then(c => { CFG.secrets = c.secrets; renderSecrets(c.secrets); });
+  tokenAlerts(st.token_alerts || []);
+  $("#progText").innerHTML = parts.length ? parts.map(p => `<span>${p}</span>`).join("") : "<span>Ready.</span>";
+  speedTrack(st.stats.checked, st.running);
+  // tab title (feature 18): live progress while scanning
+  document.title = st.running ? `▶ ${fmtN(st.stats.checked)} checked · ${fmtN(st.stats.available)} found - Pro Tool`
+                              : (st.stats.available ? `(${fmtN(st.stats.available)}) ` : "") + "Pro Tool";
+  const fk = st.found.join("\n");
+  if (fk !== lastFound) {
+    const prev = lastFound === "" ? [] : lastFound.split("\n").filter(Boolean);
+    lastFound = fk;
+    $("#cntOk").textContent = fmtN(st.found.length);
+    foundList = st.found;
+    renderFound(st.found);
+    const fresh = st.found.filter(n => !prev.includes(n));     // notify / chime only for genuinely new names
+    if (fresh.length && foundInit) {
+      toast("Available: " + fresh[fresh.length - 1]); chime(); fresh.forEach(notify);
+      celebrate();                                                // v2: burst + highlight the new row
+    }
+  }
+  foundInit = true;
+  setTimeout(poll, st.running ? 250 : 1500);   // poll often while scanning so stats feel live
+}
+// ---- live checks-per-minute chart (feature 7), smoothed over a rolling window
+let spd = [], spdHist = [];
+function speedTrack(checked, running){
+  if (!running) { if (spd.length || spdHist.length) { spd = []; spdHist = []; drawSpeed(); } return; }
+  const now = performance.now() / 1000;
+  spdHist.push({t: now, c: checked});
+  while (spdHist.length > 2 && now - spdHist[0].t > 30) spdHist.shift();
+  const windowT = now - 5;                        // average the rate over the last 5 seconds
+  let base = spdHist[0];
+  for (let i = spdHist.length - 1; i >= 0; i--) if (spdHist[i].t <= windowT) { base = spdHist[i]; break; }
+  const dt = now - base.t;
+  spd.push(dt > 0.5 ? Math.max(0, (checked - base.c) / dt * 60) : 0);
+  if (spd.length > 240) spd.shift();
+  drawSpeed();
+}
+function drawSpeed(){
+  const cv = $("#speed"); if (!cv) return;
+  const w = cv.clientWidth || 600, dpr = Math.min(2, devicePixelRatio || 1);
+  if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = 52 * dpr; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, 52);
+  if (spd.length < 2) return;
+  const max = Math.max(10, ...spd), h = hueNow();
+  ctx.beginPath();
+  spd.forEach((v, i) => { const x = i / (spd.length - 1) * w, y = 50 - v / max * 46; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.lineTo(w, 52); ctx.lineTo(0, 52); ctx.closePath();
+  const g = ctx.createLinearGradient(0, 0, 0, 52);
+  g.addColorStop(0, "rgba(220,220,220,.22)"); g.addColorStop(1, "rgba(220,220,220,0)");
+  ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath();
+  spd.forEach((v, i) => { const x = i / (spd.length - 1) * w, y = 50 - v / max * 46; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.strokeStyle = "#cfcfcf"; ctx.lineWidth = 1.4; ctx.stroke();
+}
+function setStatus(text, kind){ const s = $("#status"); s.dataset.k = kind; s.querySelector(".txt").textContent = text; }
+
+// ---------- results
+let RES = [];
+async function loadResults(){
+  const r = await api("/api/results"); RES = r.names;
+  $("#resFile").textContent = "Every available name ever found - saved in " + r.file;
+  renderResults();
+}
+function renderResults(){
+  const q = $("#resFilter").value.trim().toLowerCase();
+  let rows = RES.filter(n => (!q || n.includes(q)) && (resStarsPick < 0 || rate(n).score >= resStarsPick)).reverse();   // newest first
+  rows.sort((a, b) => (FAVS.has(b.toLowerCase()) - FAVS.has(a.toLowerCase())));  // favourites first, order kept otherwise
+  $("#resCount").textContent = `${fmtN(rows.length)} name(s)`;
+  $("#results").innerHTML = rows.length ? rows.slice(0, 3000).map(foundRow).join("") : '<div class="empty">No results yet.</div>';
+}
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); toast("Copied"); }
+  catch(e) { const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); toast("Copied"); }
+}
+
+// ---------- wiring
+function wire(){
+  document.addEventListener("click", async e => {
+    const c = e.target.closest("[data-copy]"); if (c) return copy(c.dataset.copy);
+    const a = e.target.closest("[data-act]"); if (!a) return;
+    await flush();
+    if (a.dataset.act === "start") {
+      const r = await act("/api/start", {}); if (r.ok) { show("home"); toast(`Scan started - ${fmtN(r.total)} names`); }
+    } else if (a.dataset.act === "stop") act("/api/stop");
+    else if (a.dataset.act === "pause") act("/api/pause");
+    else if (a.dataset.act === "retry") { const r = await act("/api/start", {retry:true}); if (r.ok) toast("Retrying errors"); }
+  });
+  $$("[data-clear]").forEach(b => b.onclick = async () => {
+    const k = b.dataset.clear;
+    if (k === "ok") { await api("/api/clear_found", {}); lastFound = "\u0000"; return; }   // forces a redraw on the next poll
+    clearedAt[k] = seq; renderLog();
+  });
+  $("#acctSel").onchange = async e => {        // works mid-scan: the very next check uses the new account
+    if (e.target.value === "") return;
+    const r = await act("/api/accounts/use", {i: +e.target.value});
+    e.target.blur();
+    if (r.secrets) renderSecrets(r.secrets);
+  };
+  $("#copyFound").onclick = () => lastFound ? copy(lastFound) : toast("Nothing found yet");
+  $("#copyTest").onclick = () => { const n = testNames(); n.length ? copy(n.join("\n")) : toast("No test names yet"); };
+  $("#testSort").onclick = e => { const b = e.target.closest("button[data-v]"); if (!b) return;
+    testSort = b.dataset.v; $$("#testSort button").forEach(x => x.classList.toggle("on", x === b)); renderTest(); };
+  $("#tokAlertX").onclick = () => { $("#tokAlert").hidden = true; tokShown.length = 0; };
+  $("#tokAlertGo").onclick = () => { $("#tokAlert").hidden = true; tokShown.length = 0; show("account"); };
+  $("#cycleBtn").onclick = async () => { const r = await act("/api/accounts/cycle"); if (r.secrets) renderSecrets(r.secrets); };
+  // describe the names: related words become the scan's word list
+  const showDescribed = r => {
+    $("#descWords").innerHTML = r && r.words ? r.words.map(w => `<code>${esc(w)}</code>`).join("") : "";
+  };
+  $("#descGo").onclick = async () => {
+    const text = $("#descText").value.trim();
+    if (!text) return setMsg($("#descMsg"), "Type a few describing words first, e.g. dark, ocean, fast.", "err");
+    setMsg($("#descMsg"), "Finding related words...", "info"); $("#descGo").disabled = true;
+    let r; try { r = await api("/api/describe", {text}); } catch (e) { r = {ok: false, error: "Couldn't reach Pro Tool."}; }
+    $("#descGo").disabled = false;
+    if (!r.ok) { showDescribed(null); return setMsg($("#descMsg"), r.error || "Something went wrong.", "err"); }
+    showDescribed(r);
+    let note = `Found ${fmtN(r.count)} words. Scans now build names from them.`;
+    if (r.offline) note = "Couldn't reach the word service, so only your own words are used.";
+    if (r.fit < r.count) note += ` ${fmtN(r.fit)} fit your length setting (${r.lo}-${r.hi}); raise "To" under Length to use longer ones.`;
+    setMsg($("#descMsg"), note, r.offline ? "err" : "ok");
+    refreshDict();
+  };
+  $("#descOff").onclick = async () => {
+    await api("/api/dict/use", {code: ""});
+    showDescribed(null); setMsg($("#descMsg"), "Off: scans use every combination again.", "muted");
+    refreshDict();
+  };
+  $("#forgetHist").onclick = async () => { if (!confirm("Forget every remembered taken name? Future scans will check them again.")) return;
+    await act("/api/forget_history", {}, "History cleared"); $("#histInfo").textContent = "0 taken names remembered."; };
+  // presets (Search tab settings only)
+  const savePreset = async () => { await flush(); const name = $("#presetName").value.trim();
+    if (!name) return toast("Type a name for the preset", true);
+    if (CFG.presets.includes(name) && !confirm(`Replace the preset '${name}'?`)) return;
+    const r = await act("/api/presets/save", {name}); if (r.ok) { $("#presetName").value = ""; await loadConfig(); $("#presetSel").value = name; } };
+  $("#presetSave").onclick = savePreset;
+  $("#presetName").onkeydown = e => { if (e.key === "Enter") savePreset(); };
+  $("#presetLoad").onclick = async () => { const n = $("#presetSel").value; if (!n) return;
+    const r = await act("/api/presets/load", {name: n}); if (r.ok) { await loadConfig(); $("#presetSel").value = n; estimate(); } };
+  $("#presetDel").onclick = async () => { const n = $("#presetSel").value; if (!n || !confirm(`Delete the preset '${n}'?`)) return;
+    const r = await act("/api/presets/delete", {name: n}); if (r.ok) loadConfig(); };
+  // dictionary
+  $("#langSel").onchange = async e => { e.target.blur(); if (e.target.value === "file") return; await act("/api/dict/use", {code: e.target.value}); refreshDict(); };
+  // check a list
+  const countNames = () => { const n = $("#nameList").value.split(/[\s,;]+/).filter(Boolean).length; $("#nameCount").textContent = `${fmtN(n)} name(s)`; };
+  $("#nameList").oninput = countNames;
+  // footer shortcuts that also focus a field
+  document.addEventListener("click", e => { const a = e.target.closest("[data-jump]"); if (a) setTimeout(() => { const f = $("#" + a.dataset.jump); f.scrollIntoView({block: "center"}); f.focus(); }, 60); });
+  $("#checkListed").onclick = async () => { await flush(); const r = await act("/api/start", {names: $("#nameList").value}); if (r.ok) { show("home"); toast(`Checking ${fmtN(r.total)} names`); } };
+  // webhook
+  $("#hookSave").onclick = () => act("/api/webhook", {url: $("#hookUrl").value}, "Webhook saved");
+  $("#hookTest").onclick = async () => { await flush(); await api("/api/webhook", {url: $("#hookUrl").value}); setMsg($("#hookMsg"), "Sending…", "info");
+    const r = await api("/api/webhook/test", {}); setMsg($("#hookMsg"), r.msg || r.error, r.ok ? "ok" : "err"); };
+  // account
+  $("#tokSet").onclick = async () => { const t = $("#tokIn").value.trim(); if (!t) return toast("Paste a token first", true);
+    const r = await act("/api/token", {token: t}, "Token saved"); if (r.ok) { $("#tokIn").value = ""; renderSecrets(r.secrets); } };
+  $("#tokTest").onclick = async () => { setMsg($("#tokMsg"), "Checking…", "info"); const r = await api("/api/token/test", {token: $("#tokIn").value.trim()});
+    setMsg($("#tokMsg"), r.msg || r.error, r.ok ? "ok" : "err"); loadConfig(); };
+  $("#acctAdd").onclick = async () => { const r = await act("/api/accounts/add", {token: $("#tokIn").value.trim(), label: $("#acctLabel").value});
+    if (r.ok) { $("#acctLabel").value = ""; $("#tokIn").value = ""; renderSecrets(r.secrets); } };
+  $("#accts").onclick = async e => { const b = e.target.closest("button[data-a]"); if (!b) return; const i = +b.dataset.i, a = b.dataset.a, acc = CFG.secrets.accounts[i];
+    if (a === "remove" && !confirm(`Remove '${acc.label}' from the list?`)) return;
+    const r = await act("/api/accounts/" + a, {i}); if (r.secrets) renderSecrets(r.secrets); };
+  const help = $("#tokHelp");
+  $("#tokHelpBtn").onclick = () => help.showModal();
+  $("#tokHelpClose").onclick = () => help.close();
+  help.addEventListener("click", e => { if (e.target === help) help.close(); });   // click outside to close
+  $("#acctTestAll").onclick = async () => { const b = $("#acctTestAll"); b.disabled = true; b.textContent = "Testing…";
+    const r = await act("/api/accounts/test_all"); b.disabled = false; b.textContent = "Test all"; if (r.secrets) renderSecrets(r.secrets); };
+  $("#acctFile").onchange = async e => { const f = e.target.files[0]; if (!f) return;
+    const r = await act("/api/accounts/import", {text: await readFile(f)}); if (r.secrets) renderSecrets(r.secrets); e.target.value = ""; };
+  // results
+  $("#resFilter").oninput = renderResults;
+  $("#resStars").onclick = e => { const b = e.target.closest("button[data-stars]"); if (!b) return;
+    resStarsPick = +b.dataset.stars; $$("#resStars button").forEach(x => x.classList.toggle("on", x === b)); renderResults(); };
+  $("#resCopy").onclick = () => RES.length ? copy(RES.join("\n")) : toast("No results yet");
+  // scan-page filter + favourites
+  $("#winFilter").oninput = e => { winFilter = e.target.value.trim().toLowerCase(); renderLog(); renderFound(foundList); };
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-fav]"); if (!b) return;
+    const name = b.dataset.fav, on = !FAVS.has(name.toLowerCase());
+    on ? FAVS.add(name.toLowerCase()) : FAVS.delete(name.toLowerCase());
+    renderFound(foundList); testKey = ""; renderTest(); if ($('.page[data-page="results"]').classList.contains("on")) renderResults();
+    api("/api/favourite", {name, on});
+  });
+  // notifications: ask the browser's permission the first time it's switched on
+  $$('[data-k="notify"]').forEach(el => el.addEventListener("change", () => {
+    if (el.checked && !document.documentElement.classList.contains("in-app") && "Notification" in window && Notification.permission === "default")
+      Notification.requestPermission().then(p => { if (p !== "granted") toast("Notifications are blocked in the browser", true); });
+  }));
+  // personalization
+  $("#swatches").innerHTML = SWATCH_HUES.map(h => `<button data-hue="${h}" title="Hue ${h}" style="background:linear-gradient(135deg,hsl(${h+85} 85% 66%),hsl(${h} 85% 58%))"></button>`).join("");
+  const setHue = h => { S.theme = {...S.theme, hue: h}; applyTheme(); api("/api/settings", {theme: S.theme}); };
+  $("#swatches").onclick = e => { const b = e.target.closest("button[data-hue]"); if (b) setHue(+b.dataset.hue); };
+  $("#uHue").oninput = e => setHue(+e.target.value);
+  $$('[data-ui]').forEach(el => {
+    const ev = el.type === "checkbox" ? "change" : "input";
+    el.addEventListener(ev, () => setUI(el.dataset.ui, el.type === "checkbox" ? el.checked : +el.value));
+  });
+  $("#uReset").onclick = () => { UI = {...UI_DEFAULTS}; setHue(175); applyUI(); saveUI(); toast("Personalization reset"); };
+}
+const readFile = f => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsText(f); });
+let dictPoll = null;
+async function refreshDict(){
+  await loadConfig(); estimate();
+  clearTimeout(dictPoll);
+  if (CFG.languages.some(l => l.downloading)) dictPoll = setTimeout(refreshDict, 1200);
+}
+
+// ---------- space background + particle logo
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hueNow = () => +getComputedStyle(document.documentElement).getPropertyValue("--hue") || 0;
+const isLight = () => document.documentElement.dataset.mode === "light";
+
+// Personalization (Personalization page). Saved on the server under settings.ui; defaults below.
+const UI_DEFAULTS = {glass: 1, bg: .5, parallax: true, parstr: 1, solar: true, intro: true, spin: .3};
+let UI = {...UI_DEFAULTS};
+const ROOT = document.documentElement.style;
+
+// Mouse parallax: target position in -1..1 from the centre of the window; the starfield loop eases toward it.
+const PAR = {x: 0, y: 0, tx: 0, ty: 0};
+if (!REDUCED) {
+  addEventListener("mousemove", e => { PAR.tx = e.clientX / innerWidth * 2 - 1; PAR.ty = e.clientY / innerHeight * 2 - 1; }, {passive: true});
+  document.addEventListener("mouseleave", () => { PAR.tx = PAR.ty = 0; });   // drift back to centre
+}
+
+// Background: faint stars plus a slow, dim solar system (kept quiet so it never competes with the UI).
+function starfield(){
+  const cv = $("#stars"), ctx = cv.getContext("2d");
+  const PLANETS = [   // orbit (fraction of the system's radius), size, colour; periods follow Kepler (r^1.5)
+    {r: .10, s: 1.8, c: "#9aa6bd"}, {r: .16, s: 2.6, c: "#b9c8e6"}, {r: .23, s: 2.8, c: "#7fb2ff", moon: true},
+    {r: .30, s: 2.2, c: "#6f86b8"}, {r: .45, s: 6.2, c: "#8ea6d6"}, {r: .60, s: 5.2, c: "#c3d2ee", ring: true},
+    {r: .76, s: 3.8, c: "#8fc4f0"}, {r: .92, s: 3.7, c: "#6f8dff"}];
+  let W, H, dpr, stars = [], CX, CY, R, cx = 0, cy = 0;          // cx/cy = sun position after parallax
+  const TILT = .3, PAD = 60;                                      // PAD: extra sky so parallax never shows an edge
+  const planets = PLANETS.map(p => ({...p, th: Math.random() * 6.283, w: 6.283 / (55 * Math.pow(p.r / .1, 1.5))}));
+  function resize(){
+    dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    CX = W * .66; CY = H * .58; R = Math.max(W, H) * .62;
+    stars = Array.from({length: Math.round((W + PAD * 2) * (H + PAD * 2) / 6500)}, () => ({
+      x: Math.random() * (W + PAD * 2) - PAD, y: Math.random() * (H + PAD * 2) - PAD,
+      z: Math.random() * .8 + .2,                                 // depth: nearer stars drift further
+      r: Math.random() < .94 ? Math.random() * .8 + .2 : Math.random() + .9, a: Math.random() * .38 + .06,
+      sp: Math.random() * 1.4 + .3, ph: Math.random() * 6.28}));
+  }
+  function drawPlanet(p, dim){
+    const x = cx + Math.cos(p.th) * p.r * R, y = cy + Math.sin(p.th) * p.r * R * TILT;
+    const depth = .75 + .25 * Math.sin(p.th);                   // a little smaller/dimmer at the back
+    const s = p.s * depth, lx = (cx - x), ly = (cy - y), L = Math.hypot(lx, ly) || 1;
+    const g = ctx.createRadialGradient(x + lx / L * s * .5, y + ly / L * s * .5, s * .1, x, y, s);   // lit from the sun
+    g.addColorStop(0, p.c); g.addColorStop(1, "rgba(0,0,0,.9)");
+    ctx.globalAlpha = Math.min(1, dim * depth);
+    if (p.ring) { ctx.strokeStyle = "rgba(195,210,238,.55)"; ctx.lineWidth = .8; ctx.beginPath(); ctx.ellipse(x, y, s * 2.1, s * .6, -.25, 0, 6.283); ctx.stroke(); }
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s, 0, 6.283); ctx.fill();
+    if (p.moon) { const m = p.th * 9; ctx.fillStyle = "rgba(220,220,230,.7)"; ctx.beginPath(); ctx.arc(x + Math.cos(m) * s * 3, y + Math.sin(m) * s * 3 * .5, .7, 0, 6.283); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  let last = performance.now(), lastDraw = 0, lastPx = "", lastPy = "";
+  function frame(now){
+    const dt = Math.min(.25, (now - last) / 1000); last = now;
+    const k = 1 - Math.exp(-dt * 4);                              // ease toward the mouse (no snapping)
+    PAR.x += (PAR.tx - PAR.x) * k; PAR.y += (PAR.ty - PAR.y) * k;
+    // perf: while nothing is moving, 30 redraws a second is plenty (stars twinkle and planets drift slowly)
+    const moving = Math.abs(PAR.tx - PAR.x) + Math.abs(PAR.ty - PAR.y) > .0015 || MET.length > 0;
+    if (!REDUCED && !moving && now - lastDraw < 33) { requestAnimationFrame(frame); return; }
+    const ddt = Math.min(.25, (now - (lastDraw || now)) / 1000); lastDraw = now;   // time since the last drawn frame
+    const ps = UI.parallax ? UI.parstr : 0;                       // parallax strength from Personalization
+    const dim = UI.bg, sk = UI.bg * 2;                            // background brightness (0.5 = default)
+    if (!document.hidden) {
+      const t = now / 1000, h = hueNow();
+      ctx.clearRect(0, 0, W, H);
+      for (const s of stars) {                                    // far layer: 4-16px of drift by depth
+        ctx.fillStyle = `rgba(255,255,255,${Math.min(1, s.a * sk * (REDUCED ? 1 : .55 + .45 * Math.sin(t * s.sp + s.ph)))})`;
+        ctx.beginPath(); ctx.arc(s.x - PAR.x * ps * s.z * 16, s.y - PAR.y * ps * s.z * 10, s.r, 0, 6.283); ctx.fill();
+      }
+      meteors(ctx, W, H, ddt, sk);                                 // v2: the odd shooting star
+      if (UI.solar) {
+        cx = CX - PAR.x * ps * 28; cy = CY - PAR.y * ps * 16;     // middle layer: the solar system
+        ctx.lineWidth = 1;                                          // orbits
+        for (const p of planets) { ctx.strokeStyle = `rgba(255,255,255,${.035 * sk})`; ctx.beginPath(); ctx.ellipse(cx, cy, p.r * R, p.r * R * TILT, 0, 0, 6.283); ctx.stroke(); }
+        if (!REDUCED) for (const p of planets) p.th += p.w * ddt;
+        for (const p of planets) if (Math.sin(p.th) < 0) drawPlanet(p, dim);   // far side, behind the sun
+        const sun = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * .16);   // the sun: a soft warm glow
+        sun.addColorStop(0, `rgba(200,220,255,${Math.min(1, .30 * sk)})`); sun.addColorStop(.12, `rgba(120,160,255,${Math.min(1, .12 * sk)})`); sun.addColorStop(1, "rgba(60,100,220,0)");
+        ctx.fillStyle = sun; ctx.beginPath(); ctx.arc(cx, cy, R * .16, 0, 6.283); ctx.fill();
+        ctx.fillStyle = `rgba(225,235,255,${Math.min(1, .55 * sk)})`; ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, 6.283); ctx.fill();
+        for (const p of planets) if (Math.sin(p.th) >= 0) drawPlanet(p, dim);  // near side, in front
+      }
+      // near layers (hero, cards, windows) are moved with CSS so text stays crisp
+      const px = (PAR.x * ps).toFixed(3), py = (PAR.y * ps).toFixed(3);
+      if (px !== lastPx || py !== lastPy) {                       // perf: restyling the page only when it moved
+        lastPx = px; lastPy = py; ROOT.setProperty("--px", px); ROOT.setProperty("--py", py);
+      }
+    }
+    if (!REDUCED) requestAnimationFrame(frame);
+  }
+  addEventListener("resize", () => { resize(); if (REDUCED) frame(performance.now()); });
+  resize(); requestAnimationFrame(frame);
+}
+
+// Original mark: a magnifying lens with a four-point sparkle inside, drawn as glowing particles.
+function logoShape(){                // [x, y, dust?] points in -1..1 space
+  const P = [];
+  const cx = -0.16, cy = -0.16, R = 0.56, j = () => (Math.random() - .5) * 0.022;
+  for (const off of [-0.055, 0, 0.055]) {                       // lens ring: three strands
+    const n = Math.round(150 * (R + off) / R);
+    for (let i = 0; i < n; i++) { const a = i / n * 6.283 + Math.random() * .02; P.push([cx + Math.cos(a) * (R + off) + j(), cy + Math.sin(a) * (R + off) + j()]); }
+  }
+  const hx = cx + Math.cos(.785) * (R + .07), hy = cy + Math.sin(.785) * (R + .07);
+  for (const off of [-0.05, 0, 0.05]) for (let i = 0; i <= 46; i++) {   // handle: three strands
+    const t = i / 46, x = hx + (0.86 - hx) * t, y = hy + (0.86 - hy) * t;
+    P.push([x - off * .707 + j(), y + off * .707 + j()]);
+  }
+  const star = [[0,-.27],[.06,-.06],[.27,0],[.06,.06],[0,.27],[-.06,.06],[-.27,0],[-.06,-.06]];  // sparkle outline
+  for (let k = 0; k < 8; k++) { const [x1,y1] = star[k], [x2,y2] = star[(k+1)%8];
+    for (let i = 0; i < 16; i++) { const t = i / 16; P.push([cx + x1 + (x2-x1)*t + j()*.6, cy + y1 + (y2-y1)*t + j()*.6]); } }
+  for (let i = 0; i < 70; i++) { const a = Math.random() * 6.283, r = Math.random() * 1.0; P.push([cx + Math.cos(a) * r * 1.05, cy + Math.sin(a) * r * 1.05, 1]); } // dust
+  return P;
+}
+function logoColor(mix, h, a, dark){   // violet (top) -> cyan (middle) -> white (bottom)
+  if (!dark && isLight()) return mix < .5 ? `hsla(${h + 18},70%,${52 - mix * 10}%,${a})` : `hsla(${h},80%,${34 + (mix-.5)*10}%,${a})`;
+  if (mix < .5) { const t = mix / .5; return `hsla(${h + 18 - 18 * t},${88 - 10 * t}%,${70 + 2 * t}%,${a})`; }
+  const t = (mix - .5) / .5; return `hsla(${h},${78 - 78 * t}%,${72 + 26 * t}%,${a})`;
+}
+function heroLogo(formed){
+  const cv = $("#heroLogo"), ctx = cv.getContext("2d"), P = logoShape();
+  const parts = P.map(([x, y, dust]) => ({x, y, dust: !!dust, sx: (Math.random() - .5) * 3, sy: (Math.random() - .5) * 3,
+    r: dust ? Math.random() * .6 + .3 : Math.random() * 1.1 + .5, sp: Math.random() * 2 + .6, ph: Math.random() * 6.283,
+    glint: !dust && Math.random() < .05, mix: Math.min(1, Math.max(0, (y + 1) / 2 + (Math.random() - .5) * .12))}));
+  let size = 0, dpr = 1;
+  function fit(){ dpr = Math.min(2, devicePixelRatio || 1); size = cv.clientWidth; cv.width = cv.height = size * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  const color = logoColor;
+  const t0 = performance.now() - (formed ? 1e5 : 0);   // already formed when the intro handed it over
+  function frame(now){
+    const page = $('.page[data-page="home"]');
+    if (!document.hidden && page.classList.contains("on") && cv.clientWidth) {   // perf: hidden logo = no drawing
+      if (cv.clientWidth !== size) fit();
+      const t = (now - t0) / 1000, h = hueNow(), s = size / 2, ease = REDUCED ? 1 : 1 - Math.pow(1 - Math.min(1, t / 1.8), 3);
+      const bob = REDUCED ? 0 : Math.sin(t * .8) * 3;
+      ctx.clearRect(0, 0, size, size);
+      ctx.globalCompositeOperation = isLight() ? "source-over" : "lighter";
+      for (const p of parts) {
+        const tw = REDUCED ? .85 : .45 + .55 * Math.sin(t * p.sp + p.ph);
+        const a = (p.dust ? .35 : .9) * tw * ease;
+        const x = s + (p.x + p.sx * (1 - ease)) * s * .86, y = s + (p.y + p.sy * (1 - ease)) * s * .86 + bob;
+        if (!p.dust && !isLight()) { ctx.fillStyle = color(p.mix, h, a * .16); ctx.beginPath(); ctx.arc(x, y, p.r * 3.2, 0, 6.283); ctx.fill(); }
+        ctx.fillStyle = color(p.mix, h, a); ctx.beginPath(); ctx.arc(x, y, p.r, 0, 6.283); ctx.fill();
+        if (p.glint && tw > .8 && !isLight()) {                 // little cross flare, like a star glinting
+          const L = 7 * (tw - .8) / .2 + 2; ctx.strokeStyle = `rgba(255,255,255,${a * .8})`; ctx.lineWidth = .8;
+          ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke();
+        }
+      }
+    }
+    if (!REDUCED) requestAnimationFrame(frame);
+  }
+  fit(); requestAnimationFrame(frame);
+  if (REDUCED) addEventListener("hashchange", () => setTimeout(() => frame(performance.now()), 50));
+}
+
+// ---------- intro: a black hole that, as you scroll, unravels into the magnifying-glass logo
+function intro(onDone){
+  const el = $("#intro"), cv = $("#introCv"), ctx = cv.getContext("2d");
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const FORM = 1, TOTAL = 1.4;                       // 0..1 forms the logo, 1..1.4 hands it to the page
+  let SPIN = .3; try { SPIN = +localStorage.getItem("dsv_spin") || .3; } catch(e) {}   // orbit speed, from Personalization
+  const shape = logoShape(), N = Math.max(1500, shape.length);
+  const parts = [];
+  for (let i = 0; i < N; i++) {
+    const tg = shape[i], ring = Math.random() < .13;
+    const r = ring ? .205 + Math.random() * .035 : .24 + Math.pow(Math.random(), 1.6) * 1.25;
+    parts.push({tx: tg ? tg[0] : 0, ty: tg ? tg[1] : 0, dust: tg ? !!tg[2] : false, extra: !tg, ring, r,
+      th: Math.random() * 6.283, w: (ring ? 1.9 : .5 / Math.pow(r, 1.5)) * (.8 + Math.random() * .4),
+      size: Math.random() * 1.1 + .4, sp: Math.random() * 2 + .6, ph: Math.random() * 6.283, glint: Math.random() < .04,
+      delay: Math.random(), heat: clamp(1 - (r - .2) / 1.2),
+      mix: tg ? clamp((tg[1] + 1) / 2 + (Math.random() - .5) * .12) : 0});
+  }
+  const bg = Array.from({length: 260}, () => ({x: Math.random(), y: Math.random(), r: Math.random() * .9 + .2, a: Math.random() * .5 + .15, ph: Math.random() * 6.283, sp: Math.random() + .3}));
+  let W, H, dpr, target = 0, shown = 0, last = performance.now(), active = true, heroRect = null;
+  function fit(){ dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  fit(); addEventListener("resize", fit);
+  document.documentElement.classList.add("intro-lock");
+  const heroCv = $("#heroLogo"); heroCv.style.opacity = 0;
+
+  // past the formed logo the hand-off runs on its own: a nudge down finishes it, a nudge up brings the logo back
+  const push = d => {
+    if (!active) return;
+    target = clamp(target + d, 0, TOTAL);
+    if (d > 0 && target > FORM + .04) target = TOTAL;
+    else if (d < 0 && target > FORM && target < TOTAL - .04) target = FORM;
+  };
+  const onWheel = e => { e.preventDefault(); push((e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) / 1700); };
+  let ty = null;
+  const onTs = e => { ty = e.touches[0].clientY; };
+  const onTm = e => { e.preventDefault(); const y = e.touches[0].clientY; push((ty - y) / 650); ty = y; };
+  const onKey = e => {
+    if (!active) return;
+    if (["ArrowDown","PageDown"," ","Enter"].includes(e.key)) { e.preventDefault(); push(.12); }
+    else if (["ArrowUp","PageUp"].includes(e.key)) { e.preventDefault(); push(-.12); }
+    else if (e.key === "Escape") target = TOTAL;
+  };
+  el.addEventListener("wheel", onWheel, {passive: false});
+  el.addEventListener("touchstart", onTs, {passive: true});
+  el.addEventListener("touchmove", onTm, {passive: false});
+  addEventListener("keydown", onKey);
+  $("#introSkip").onclick = () => { target = TOTAL; };
+
+  function finish(){                     // once you're in, the intro stays gone until the app is reopened
+    active = false;
+    el.style.display = "none";
+    document.documentElement.classList.remove("intro-lock");
+    heroCv.style.opacity = "";
+    onDone && onDone();
+  }
+  function frame(now){
+    const dt = Math.min(.25, (now - last) / 1000); last = now;   // keeps pace even when frames are slow
+    shown += (target - shown) * Math.min(1, dt * 3.2);
+    if (Math.abs(target - shown) < (target === TOTAL ? .02 : .0005)) shown = target;   // don't crawl the last bit
+    const form = clamp(shown / FORM), exit = ease(clamp((shown - FORM) / (TOTAL - FORM)));
+    const t = now / 1000, h = hueNow();
+
+    // where the logo ends up: the Home page's logo canvas (if Home is showing), else the screen centre
+    if (exit > 0 && !heroRect) {
+      const home = $('.page[data-page="home"]').classList.contains("on");
+      const r = heroCv.getBoundingClientRect();
+      heroRect = home && r.width ? {x: r.left + r.width / 2, y: r.top + r.height / 2, s: r.width / 2 * .86} : null;
+    }
+    const s0 = Math.min(W, H) * .4, cx0 = W / 2, cy0 = H / 2;
+    const hx = heroRect ? heroRect.x : cx0, hy = heroRect ? heroRect.y : cy0, hs = heroRect ? heroRect.s : s0;
+    const S = s0 + (hs - s0) * exit, CX = cx0 + (hx - cx0) * exit, CY = cy0 + (hy - cy0) * exit;
+
+    el.style.background = `rgba(0,0,0,${1 - exit})`;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+    for (const b of bg) {                            // the intro's own sky (the page's sky takes over as it fades)
+      ctx.fillStyle = `rgba(255,255,255,${b.a * (REDUCED ? 1 : .55 + .45 * Math.sin(t * b.sp + b.ph)) * (1 - exit)})`;
+      ctx.beginPath(); ctx.arc(b.x * W, b.y * H, b.r, 0, 6.283); ctx.fill();
+    }
+
+    const holeR = .17 * (1 - ease(clamp(form / .7)));
+    const pts = [];
+    for (const p of parts) {
+      if (!REDUCED) p.th += p.w * dt * SPIN * (1 - form * .75);
+      const lt = ease(clamp((form - p.delay * .45) / .55));
+      let r = p.r, bx, by;
+      if (p.extra) r = p.r * (1 - lt) + holeR * .5 * lt;           // leftovers spiral into the hole
+      bx = Math.cos(p.th) * r;
+      by = Math.sin(p.th) * r * (p.ring ? 1 : .3);                 // tilted accretion disk; photon ring stays round
+      let x = p.extra ? bx : bx + (p.tx - bx) * lt, y = p.extra ? by : by + (p.ty - by) * lt;
+      const sw = (1 - lt) * lt * 1.6, c = Math.cos(sw), s = Math.sin(sw);   // a swirl on the way to the logo
+      [x, y] = [x * c - y * s, x * s + y * c];
+      const tw = REDUCED ? .85 : .45 + .55 * Math.sin(t * p.sp + p.ph);
+      let a = (p.dust ? .35 + .55 * (1 - lt) : .9) * tw;
+      if (p.extra) a *= (1 - lt) * (1 - exit);
+      if (a < .01) continue;
+      const mix = (p.extra ? .15 + p.heat * .85 : (.15 + p.heat * .85) * (1 - lt) + p.mix * lt);
+      pts.push({x: CX + x * S, y: CY + y * S, a, mix, size: p.size * (1 + (1 - form) * .25), glint: p.glint && tw > .8,
+        back: !p.ring && Math.sin(p.th) < 0 && lt < .5});
+    }
+    const drawPts = list => {
+      ctx.globalCompositeOperation = "lighter";
+      for (const q of list) {
+        ctx.fillStyle = logoColor(q.mix, h, q.a * .16, true); ctx.beginPath(); ctx.arc(q.x, q.y, q.size * 3.2, 0, 6.283); ctx.fill();
+        ctx.fillStyle = logoColor(q.mix, h, q.a, true); ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, 6.283); ctx.fill();
+        if (q.glint) { const L = 6; ctx.strokeStyle = `rgba(255,255,255,${q.a * .7})`; ctx.lineWidth = .8;
+          ctx.beginPath(); ctx.moveTo(q.x - L, q.y); ctx.lineTo(q.x + L, q.y); ctx.moveTo(q.x, q.y - L); ctx.lineTo(q.x, q.y + L); ctx.stroke(); }
+      }
+    };
+    drawPts(pts.filter(q => q.back));               // far side of the disk ...
+    if (holeR > .002) {                              // ... hidden by the event horizon ...
+      const R = holeR * S;
+      const g = ctx.createRadialGradient(CX, CY, R * .9, CX, CY, R * 3.2);
+      g.addColorStop(0, `hsla(${h + 10},90%,70%,${.35 * (1 - form)})`); g.addColorStop(.35, `hsla(${h + 16},90%,60%,${.12 * (1 - form)})`); g.addColorStop(1, "transparent");
+      ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R * 3.2, 0, 6.283); ctx.fill();
+      ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(CX, CY, R, 0, 6.283); ctx.fill();
+    }
+    drawPts(pts.filter(q => !q.back));              // ... and the near side in front of it
+
+    el.style.setProperty("--hint", clamp(1 - shown * 5));
+    el.style.setProperty("--cap", clamp((form - .75) / .2) * (1 - exit));
+    el.style.setProperty("--ui", 1 - exit);
+    el.style.setProperty("--prog", form);
+    if (target === TOTAL && shown >= TOTAL - .002) return finish();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ================= v2 effects (visual only) =================
+// Numbers count smoothly to their new value instead of jumping.
+function roll(el, n){
+  if (el._v === undefined || REDUCED) { el._v = el._to = n; el.textContent = fmtN(n); return; }
+  if (el._to === n) return;
+  const from = el._v; el._to = n;
+  el.classList.add("roll", "bump"); clearTimeout(el._bt); el._bt = setTimeout(() => el.classList.remove("bump"), 350);
+  const t0 = performance.now(), d = Math.min(700, 250 + Math.abs(n - from) * 40);
+  cancelAnimationFrame(el._raf);
+  const step = now => {
+    const k = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k, 3);
+    el._v = Math.round(from + (n - from) * e); el.textContent = fmtN(el._v);
+    if (k < 1) el._raf = requestAnimationFrame(step);
+  };
+  el._raf = requestAnimationFrame(step);
+}
+
+// A find: sparks fly out of the Available count, the window flashes and the new row glows.
+function celebrate(){
+  const win = $('.win[data-w="ok"]');
+  if (!win || !$('.page[data-page="home"]').classList.contains("on")) return;
+  const row = $("#found div[data-name]"); if (row) row.classList.add("new");
+  win.classList.add("flash"); setTimeout(() => win.classList.remove("flash"), 1200);
+  if (REDUCED) return;
+  const r = $("#cntOk").getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, h = hueNow();
+  const cols = ["#4ade80", "#8fb8ff", `hsl(${h + 10} 90% 70%)`, `hsl(${h + 18} 85% 72%)`, "#ffffff"];
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement("i"), c = cols[i % cols.length];
+    s.className = "spark"; s.style.cssText = `left:${x}px;top:${y}px;background:${c};box-shadow:0 0 8px ${c}`;
+    document.body.appendChild(s);
+    const a = Math.random() * 6.283, d = 40 + Math.random() * 90;
+    s.animate([{transform: "translate(-50%,-50%) scale(1)", opacity: 1},
+               {transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d}px)) scale(.2)`, opacity: 0}],
+              {duration: 700 + Math.random() * 500, easing: "cubic-bezier(.2,.8,.2,1)"}).onfinish = () => s.remove();
+  }
+}
+
+// Cards rise in one after another when a page opens.
+function stagger(tab){
+  const page = $(`.page[data-page="${tab}"]`); if (!page) return;
+  page.querySelectorAll(".stat,.panel,.win").forEach((el, i) => {
+    el.classList.remove("rise"); el.style.setProperty("--i", Math.min(i, 12)); void el.offsetWidth; el.classList.add("rise");
+  });
+}
+
+// The odd shooting star streaks across the background (drawn by the starfield loop).
+const MET = []; let metT = 4;
+function meteors(ctx, W, H, dt, sk){
+  if (REDUCED) return;
+  metT -= dt;
+  if (metT <= 0) {
+    metT = 5 + Math.random() * 9;
+    const a = .45 + Math.random() * .35;
+    MET.push({x: W * (.3 + Math.random() * .8), y: -20 + Math.random() * H * .35, vx: -Math.cos(a) * 900, vy: Math.sin(a) * 900,
+              life: 0, max: .9 + Math.random() * .6});
+  }
+  for (let i = MET.length - 1; i >= 0; i--) {
+    const m = MET[i]; m.life += dt; m.x += m.vx * dt; m.y += m.vy * dt;
+    const k = m.life / m.max; if (k >= 1) { MET.splice(i, 1); continue; }
+    const fade = Math.sin(k * Math.PI) * Math.min(1, sk), tx = m.x - m.vx * .12, ty = m.y - m.vy * .12;
+    const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    g.addColorStop(0, `rgba(255,255,255,${.85 * fade})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.strokeStyle = g; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+  }
+}
+
+let tiltEl = null;
+function untilt(el){ el.classList.remove("live"); el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg"); el.style.setProperty("--sheen", ".04"); }
+
+function fx(){
+  // cursor spotlight + 3D tilt (both follow the Personalization motion switch)
+  const SPOT = $("#spot"); let mvE = null, mvRaf = 0;
+  if (!REDUCED) addEventListener("mousemove", ev => { mvE = ev; if (!mvRaf) mvRaf = requestAnimationFrame(() => { mvRaf = 0; const e = mvE;
+    SPOT.style.setProperty("--cx", e.clientX + "px"); SPOT.style.setProperty("--cy", e.clientY + "px");
+    if (!UI.parallax) { if (tiltEl) { untilt(tiltEl); tiltEl = null; } return; }
+    if (document.documentElement.classList.contains("win-moving")) return;   // a window is being dragged/resized
+    const el = e.target.closest(".page .stat, .page .panel, .page .win");
+    if (el !== tiltEl) { if (tiltEl) untilt(tiltEl); tiltEl = el; }
+    if (!el) return;
+    const r = el.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    const a = (el.classList.contains("stat") ? 7 : el.classList.contains("win") ? 1.6 : 2.2) * UI.parstr;
+    el.classList.add("tilt", "live");
+    el.style.setProperty("--ry", ((px - .5) * 2 * a).toFixed(2) + "deg");
+    el.style.setProperty("--rx", ((.5 - py) * 2 * a).toFixed(2) + "deg");
+    el.style.setProperty("--mx", (px * 100).toFixed(1) + "%"); el.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+    el.style.setProperty("--sheen", ".1");
+  }); }, {passive: true});
+  document.addEventListener("mouseleave", () => { if (tiltEl) { untilt(tiltEl); tiltEl = null; } });
+
+  // command palette: Ctrl+K (or the button in the top bar)
+  const pal = $("#palette"), pin = $("#palIn"), plist = $("#palList");
+  let psel = 0, pitems = [];
+  const cmds = () => [
+    ["Go to Scan", () => show("home")], ["Go to Search", () => show("search")], ["Go to Accounts", () => show("account")],
+    ["Go to Webhook", () => show("webhook")], ["Go to Results", () => show("results")], ["Go to Activity", () => show("activity")], ["Go to Errors", () => show("errors")], ["Go to Personalization", () => show("personal")],
+    [running ? "Stop scan" : "Start scan", () => $("#runBtn").click()],
+    ["Pause / resume scan", () => act("/api/pause")],
+    ["Next account", () => $("#cycleBtn").click()],
+    ["Copy all found names", () => $("#copyFound").click()],
+    ["Check a list of names", () => { show("search"); setTimeout(() => $("#nameList").focus(), 80); }],
+    [UI.parallax ? "Turn motion effects off" : "Turn motion effects on", () => setUI("parallax", !UI.parallax)],
+  ];
+  const render = () => {
+    const q = pin.value.trim().toLowerCase();
+    pitems = cmds().filter(c => c[0].toLowerCase().includes(q));
+    psel = Math.min(psel, Math.max(0, pitems.length - 1));
+    plist.innerHTML = pitems.length ? pitems.map((c, i) => `<li data-i="${i}" class="${i === psel ? "sel" : ""}">${esc(c[0])}<small>${i === psel ? "Enter ↵" : ""}</small></li>`).join("")
+                                    : '<li class="empty">No matching command</li>';
+  };
+  const open = () => { pin.value = ""; psel = 0; render(); pal.showModal(); pin.focus(); };
+  const run = i => { const c = pitems[i]; pal.close(); if (c) c[1](); };
+  addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); pal.open ? pal.close() : open(); }
+  });
+  $("#paletteBtn").onclick = open;
+  $("#persBtn").onclick = () => show("personal");
+
+  // desktop app title bar -> window controls provided by the app (window.pywebview.api)
+  const winCall = m => { const a = window.pywebview && window.pywebview.api; if (a && a[m]) a[m](); };
+  $("#tbMin").onclick = () => winCall("minimize");
+  // minimize to background: ask first, then hide the window; the tray icon brings it back
+  const bgAsk = $("#bgAsk");
+  $("#tbHide").onclick = () => { bgAsk.showModal(); $("#bgAskYes").focus(); };
+  $("#bgAskNo").onclick = $("#bgAskX").onclick = () => bgAsk.close();
+  bgAsk.addEventListener("click", e => { if (e.target === bgAsk) bgAsk.close(); });
+  $("#bgAskYes").onclick = async () => {
+    bgAsk.close();
+    const a = window.pywebview && window.pywebview.api;
+    let ok = false;
+    try { ok = !!(a && a.hide_to_tray && await a.hide_to_tray()); } catch (e) {}
+    if (!ok) toast("Couldn't minimize to the background (no tray icon available)", true);
+  };
+  // updates: checked when the app opens (and from Settings); Update now installs it and restarts, Later skips it this time
+  const updAsk = $("#updAsk");
+  async function checkUpdate(manual){
+    const msg = $("#updMsg");
+    if (manual) setMsg(msg, "Checking…", "info");
+    let r; try { r = await api("/api/update/check", {}); } catch (e) { r = {ok: false, error: "Couldn't reach Pro Tool."}; }
+    if (!r.ok) { if (manual) setMsg(msg, r.error || "Couldn't check for updates.", "err"); return; }
+    if (!r.available) { if (manual) setMsg(msg, `You're up to date (v${r.current}).`, "ok"); return; }
+    if (manual) setMsg(msg, `Version ${r.version} is available.`, "ok");
+    $("#updTitle").textContent = `Update available: v${r.version}`;
+    $("#updTxt").textContent = `You have v${r.current}. Updating takes a few seconds - Pro Tool closes and opens again by itself. Your settings, accounts and results are kept.`;
+    $("#updNotes").textContent = r.notes ? "What's new:\n" + r.notes : ""; $("#updNotes").hidden = !r.notes;
+    setMsg($("#updAskMsg"), "", ""); $("#updNow").disabled = false; $("#updNow").textContent = "Update now"; $("#updLater").disabled = false;
+    if (!updAsk.open) updAsk.showModal();
+  }
+  $("#updCheck").onclick = () => checkUpdate(true);
+  $("#updLater").onclick = $("#updX").onclick = () => updAsk.close();
+  $("#updNow").onclick = async () => {
+    $("#updNow").disabled = $("#updLater").disabled = true; $("#updNow").textContent = "Updating…";
+    setMsg($("#updAskMsg"), "Downloading and checking the update…", "info");
+    let r; try { r = await api("/api/update/install", {}); } catch (e) { r = {ok: false, error: "Lost contact with Pro Tool."}; }
+    if (r.ok) { setMsg($("#updAskMsg"), `Installed v${r.version}. Pro Tool is restarting…`, "ok"); return; }
+    setMsg($("#updAskMsg"), r.error || "The update couldn't be installed.", "err");
+    $("#updNow").disabled = $("#updLater").disabled = false; $("#updNow").textContent = "Try again";
+  };
+  (function whenReady(){                      // show the version, then one quiet check a few seconds after opening
+    if (!CFG) return setTimeout(whenReady, 300);
+    $("#updVer").textContent = "v" + CFG.version;
+    if (CFG.can_update) setTimeout(() => checkUpdate(false), 4000);
+  })();
+  $("#tbMax").onclick = () => winCall("toggle_maximize");
+  $("#tbClose").onclick = () => winCall("close");
+  $(".tb-drag").ondblclick = () => winCall("toggle_maximize");
+
+  // edge + corner grab zones so the borderless window can still be resized
+  if (document.documentElement.classList.contains("in-app")) {
+    let drag = null, want = null, busy = false;
+    const push = async () => {                      // one resize call in flight at a time, always the latest size
+      if (busy || !want) return;
+      busy = true; const w = want; want = null;
+      try { await window.pywebview.api.resize_to(w.w, w.h, w.edge); } catch (e) {}
+      busy = false; push();
+    };
+    ["n", "s", "e", "w", "ne", "nw", "se", "sw"].forEach(edge => {
+      const z = document.createElement("div"); z.className = "rz rz-" + edge; z.dataset.edge = edge;
+      z.onpointerdown = e => {
+        if (document.documentElement.classList.contains("maxed") || !window.pywebview) return;
+        e.preventDefault();
+        if (typeof window.pywebview.api.begin_resize === "function") {   // the app follows the mouse itself (smooth)
+          z.setPointerCapture(e.pointerId);                                // keeps the resize cursor while dragging
+          window.pywebview.api.begin_resize(edge); return;
+        }
+        z.setPointerCapture(e.pointerId);
+        drag = {edge, x: e.screenX, y: e.screenY, w: innerWidth, h: innerHeight};
+      };
+      z.onpointermove = e => {
+        if (!drag) return;
+        const dx = e.screenX - drag.x, dy = e.screenY - drag.y;
+        want = {edge: drag.edge,
+                w: Math.max(980, drag.w + (drag.edge.includes("e") ? dx : drag.edge.includes("w") ? -dx : 0)),
+                h: Math.max(640, drag.h + (drag.edge.includes("s") ? dy : drag.edge.includes("n") ? -dy : 0))};
+        push();
+      };
+      z.onpointerup = z.onpointercancel = () => { drag = null; };
+      document.body.appendChild(z);
+    });
+  }
+  pin.oninput = () => { psel = 0; render(); };
+  pin.onkeydown = e => {
+    const n = Math.max(1, pitems.length);
+    if (e.key === "ArrowDown") { psel = (psel + 1) % n; render(); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { psel = (psel - 1 + n) % n; render(); e.preventDefault(); }
+    else if (e.key === "Enter") { e.preventDefault(); run(psel); }
+  };
+  plist.onclick = e => { const li = e.target.closest("li[data-i]"); if (li) run(+li.dataset.i); };
+  plist.onmousemove = e => { const li = e.target.closest("li[data-i]"); if (li && +li.dataset.i !== psel) { psel = +li.dataset.i; render(); } };
+  pal.addEventListener("click", e => { if (e.target === pal) pal.close(); });
+}
+
+async function init(){   // started by the lock screen once the password is accepted
+  // minimal look: no black-hole intro, no starfield / solar system background
+  buildNav(); wire(); bindSettings(); fx();
+  let tab = location.hash.slice(1); try { tab = tab || localStorage.getItem("dsv_tab"); } catch(e) {}
+  await loadConfig();
+  show(tab || "home");
+  renderLog();
+  addEventListener("hashchange", () => show(location.hash.slice(1)));
+  poll();
+}
+</script>
+<script>
+// ---------- startup animation (separate from the tool: it only draws over the start screen, then removes itself)
+// black -> streaks of light gather into one point -> it flares like a star -> the start screen opens out from that point
+function boot(){   // started by the lock screen, after the PIN: a short, plain fade from black into the app
+  const el = document.getElementById("boot"); if (!el) return;
+  el.classList.add("run");
+  let done = false; const end = () => { if (!done) { done = true; el.remove(); } };
+  el.animate([{opacity: 1}, {opacity: 0}], {duration: 450, delay: 100, easing: "ease-out", fill: "forwards"}).onfinish = end;
+  setTimeout(end, 1500);                                   // never stays up
+}
+</script>
+<script>
+// ---------- sidebar: the 3-bar button opens/closes it; the choice is remembered
+(function sidebar(){
+  const root = document.documentElement, btn = document.getElementById("navToggle"), narrow = () => innerWidth <= 900;
+  let closed = narrow();
+  try { const v = localStorage.getItem("pt_nav_closed"); if (v !== null && !narrow()) closed = v === "1"; } catch (e) {}
+  const apply = () => { root.classList.toggle("nav-closed", closed); btn.setAttribute("aria-expanded", String(!closed)); };
+  btn.addEventListener("click", () => {
+    closed = !closed; apply();
+    if (!narrow()) try { localStorage.setItem("pt_nav_closed", closed ? "1" : "0"); } catch (e) {}
+  });
+  document.getElementById("nav").addEventListener("click", e => { if (narrow() && e.target.closest("button")) { closed = true; apply(); } });
+  addEventListener("keydown", e => { if (e.key === "Escape" && narrow() && !closed) { closed = true; apply(); } });
+  apply();
+})();
+
+// ---------- start: the app opens straight away, with a short fade from black
+init();
+boot();
+</script>
+<script>
+// ---------- smooth scrolling: the mouse wheel glides instead of jumping, for the page and the log/list windows.
+// A window that's already at its end passes the scroll on to the page, like normal scrolling does.
+(function smoothScroll(){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const live = new Map();                                    // element -> {pos, target, raf, t}
+  const canScroll = (el, dy) => {
+    const cs = getComputedStyle(el);
+    if (!/(auto|scroll)/.test(cs.overflowY) || el.scrollHeight <= el.clientHeight + 1) return false;
+    const s = live.get(el), cur = s ? s.target : el.scrollTop, max = el.scrollHeight - el.clientHeight;
+    return dy < 0 ? cur > 0.5 : cur < max - 0.5;
+  };
+  const scrollerFor = (t, dy) => {
+    for (let el = t; el && el.nodeType === 1 && el !== document.body && el !== document.documentElement; el = el.parentElement)
+      if (canScroll(el, dy)) return el;
+    return document.scrollingElement;
+  };
+  function step(el, s, now){
+    const dt = Math.min(.05, (now - s.t) / 1000); s.t = now;
+    if (Math.abs(el.scrollTop - s.pos) > 3) s.pos = el.scrollTop;        // moved by something else (scrollbar, auto-scroll)
+    const k = 1 - Math.pow(1 - .2, dt * 60);                               // same feel at any frame rate
+    s.pos += (s.target - s.pos) * k;
+    if (Math.abs(s.target - s.pos) < .5) { el.scrollTop = s.target; live.delete(el); return; }
+    el.scrollTop = s.pos;
+    s.raf = requestAnimationFrame(t => step(el, s, t));
+  }
+  addEventListener("wheel", e => {
+    if (e.defaultPrevented || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) return;
+    if (document.documentElement.classList.contains("intro-lock") || document.getElementById("lock") || document.getElementById("boot")) return;
+    if (e.target.closest && e.target.closest("dialog, select, input[type=range]")) return;
+    const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? innerHeight : 1);
+    const el = scrollerFor(e.target, dy), max = el.scrollHeight - el.clientHeight;
+    let s = live.get(el);
+    if (!s) s = {pos: el.scrollTop, target: el.scrollTop, raf: 0, t: performance.now()};
+    const next = Math.max(0, Math.min(max, s.target + dy));
+    if (next === s.target && !live.has(el)) return;                         // already at the end: nothing to do
+    e.preventDefault();
+    s.target = next;
+    if (!live.has(el)) { live.set(el, s); s.t = performance.now(); s.raf = requestAnimationFrame(t => step(el, s, t)); }
+  }, {passive: false});
+})();
+</script>
+<script>
+// ---------- Scan page windows: drag a window's title bar to rearrange them.
+// The layout (order, heights, full-width) is remembered on this PC; "Reset layout" puts it back.
+(function winLayout(){
+  const grid = document.querySelector('.page[data-page="home"] .wins'); if (!grid) return;
+  const KEY = "pt_win_layout_v1", MIN_H = 120, MAX_H = 1000, DEF_H = 300;
+  const wins = () => [...grid.querySelectorAll(":scope > .win")];
+  const body = w => w.querySelector(".log, .list");
+  const root = document.documentElement;
+  const defaultOrder = wins().map(w => w.dataset.w);
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } };
+  function save(){
+    const lay = {order: wins().map(w => w.dataset.w)};
+    try { localStorage.setItem(KEY, JSON.stringify(lay)); } catch (e) {}
+  }
+  function apply(lay){
+    const byKey = Object.fromEntries(wins().map(w => [w.dataset.w, w]));
+    const order = (lay && lay.order || []).filter(k => byKey[k]);
+    defaultOrder.forEach(k => { if (!order.includes(k)) order.push(k); });
+    order.forEach(k => grid.appendChild(byKey[k]));
+    wins().forEach(w => { body(w).style.height = ""; w.classList.remove("wide"); });   // normal size (no resizing)
+  }
+  // the others slide to their new places instead of jumping
+  function flip(except, change){
+    const others = wins().filter(w => w !== except), before = new Map(others.map(w => [w, w.getBoundingClientRect()]));
+    change();
+    others.forEach(w => {
+      const a = before.get(w), b = w.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+      if (dx || dy) w.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "translate(0,0)"}], {duration: 220, easing: "cubic-bezier(.2,.8,.2,1)"});
+    });
+  }
+  const twoCols = () => getComputedStyle(grid).gridTemplateColumns.split(" ").length > 1;
+
+  // --- drag to rearrange
+  let drag = null;
+  grid.addEventListener("pointerdown", e => {
+    const h = e.target.closest(".win-h"); if (!h || e.button !== 0 || e.target.closest("button, input, a")) return;
+    const w = h.closest(".win"), r = w.getBoundingClientRect();
+    drag = {w, h, id: e.pointerId, sx: e.clientX, sy: e.clientY, gx: e.clientX - r.left, gy: e.clientY - r.top, on: false};
+    try { h.setPointerCapture(e.pointerId); } catch (x) {}
+  });
+  grid.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const {w} = drag;
+    if (!drag.on) {
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return;
+      drag.on = true; root.classList.add("win-moving"); w.classList.add("dragging");
+      if (typeof untilt === "function") untilt(w);
+    }
+    // swap with the window under the pointer
+    // (layout positions, not on-screen ones: a window that's still sliding must not trigger a swap back)
+    const gr = grid.getBoundingClientRect(), px = e.clientX - gr.left, py = e.clientY - gr.top;
+    const over = wins().find(o => o !== w && px > o.offsetLeft && px < o.offsetLeft + o.offsetWidth && py > o.offsetTop && py < o.offsetTop + o.offsetHeight);
+    if (over) flip(w, () => { const list = wins(); list.indexOf(w) < list.indexOf(over) ? over.after(w) : over.before(w); });
+    // keep the dragged window under the pointer
+    w.style.left = w.style.top = "0px";
+    const nat = w.getBoundingClientRect();
+    w.style.left = (e.clientX - drag.gx - nat.left) + "px";
+    w.style.top = (e.clientY - drag.gy - nat.top) + "px";
+  });
+  const endDrag = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    const {w, on} = drag; drag = null;
+    if (!on) return;
+    const dx = parseFloat(w.style.left) || 0, dy = parseFloat(w.style.top) || 0;
+    w.style.left = w.style.top = "";
+    w.classList.remove("dragging"); root.classList.remove("win-moving");
+    w.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "translate(0,0)"}], {duration: 240, easing: "cubic-bezier(.2,.8,.2,1)"});   // settle into its slot
+    save();
+  };
+  grid.addEventListener("pointerup", endDrag);
+  grid.addEventListener("pointercancel", endDrag);
+  grid.addEventListener("lostpointercapture", endDrag);
+
+  // --- remember / reset
+  apply(load());
+  const reset = document.getElementById("winReset");
+  if (reset) reset.onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} flip(null, () => apply(null)); if (typeof toast === "function") toast("Window layout reset"); };
+})();
+</script>
+</body>
+</html>
