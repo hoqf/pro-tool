@@ -2,6 +2,10 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.2.1 - 2026-11-22
+- Presets moved to a wide tile at the top of Search, with a dropdown to load and save.
+- Pop-up option windows now fade in quickly over a blurred background.
+
 ## v2.2.0 - 2026-11-22
 - Redesigned Search tab: every category is now an equal-sized tile showing its current setting, and tapping one opens a pop-out window with its options.
 
