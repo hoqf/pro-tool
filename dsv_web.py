@@ -66,11 +66,12 @@ def set_data_dir(path):
 
 
 DEFAULTS = {
-    "min": "2", "max": "3", "dmin": "2", "dmax": "4", "limit": "0", "break_every": "0",
+    "min": "4", "max": "4", "dmin": "2", "dmax": "4", "limit": "0", "break_every": "0",
     "break_secs": "30", "time_limit": "0", "stop_after": "0", "prefix": "", "suffix": "",
     "custom_chars": "", "wmin": "1", "wmax": "1", "must": "", "exclude": "",
-    "letters": True, "digits": True, "underscore": False, "period": False,
-    "mode": "shortest", "place": "any", "skip_known": True, "log_taken": True,
+    # default search: random 4-letter names, letters a-z only
+    "letters": True, "digits": False, "underscore": False, "period": False,
+    "mode": "random", "place": "any", "skip_known": True, "log_taken": True,
     "dict_lang": "", "dict_file": "", "dict_skip_caps": True,
     "hook_on": False, "hook_done": False, "hook_name": "",
     "hook_content": core.DEFAULT_HOOK["content"], "hook_embed": core.DEFAULT_HOOK["embed"],
