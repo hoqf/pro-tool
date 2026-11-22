@@ -2,6 +2,10 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.1.8 - 2026-11-22
+- Results tab: new Sort menu (newest, oldest, best rated, A to Z, shortest and more).
+- Settings: Check for updates now turns into Update now / Later right there.
+
 ## v2.1.7 - 2026-11-22
 - Fixed: saved tokens and accounts now stay saved after closing or updating Pro Tool (add them once more after this update).
 

@@ -44,7 +44,7 @@ ROOT = os.path.dirname(HERE) if not getattr(sys, "frozen", False) and os.path.ba
 # ------------------------------------------------------------------ updates
 # release.py sets these. Updates are signed: the app only installs an update whose signature matches
 # UPDATE_PUBKEY, so nobody but the holder of the private signing key can push one.
-APP_VERSION = "2.1.7"
+APP_VERSION = "2.1.8"
 UPDATE_REPO = "hoqf/pro-tool"
 UPDATE_PUBKEY = "UIyHAE1nXAPFRJCc8ZkIEe3WjiwJoxXZoIqKpOpk8Ww="
 UPDATE_ASSET = "ProToolV2.exe"
