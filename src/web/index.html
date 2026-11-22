@@ -576,6 +576,15 @@ textarea{min-height:64px}
 @media (max-width:1180px){.presets .row{flex-wrap:wrap}}
 #acctShowFailed.on{border-color:var(--blue);background:var(--accent-soft)}
 .res-sort{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)} .res-sort select{width:auto;padding:6px 10px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cat-card{display:flex;flex-direction:column;gap:9px;min-height:94px;text-align:left;padding:16px;cursor:pointer;color:inherit;font:inherit;
+  background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s,background .15s}
+.cat-card:hover{background:var(--chip-h);border-color:var(--blue)} .cat-card:active{transform:translateY(1px)}
+.cat-card .cat-title{font:700 13px var(--display);letter-spacing:.07em;text-transform:uppercase}
+.cat-card .cat-sum{font-size:13px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
+.cat-card.active{border-color:var(--blue)} .cat-card.active .cat-sum{color:var(--text)}
+.cat-modal{max-width:520px} .cat-modal .note{margin-top:12px}
+.est-panel{margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -714,125 +723,124 @@ textarea{min-height:64px}
     <!-- SEARCH -->
     <section class="page" data-page="search">
       <h1>Search</h1><p class="sub">What to look for. Changes save automatically.</p>
-      <div class="search-top">
-      <div class="panel glass presets">
-        <h2>Presets</h2>
-        <div class="row" style="align-items:center">
-          <select id="presetSel" style="flex:1 1 200px"></select>
-          <button class="btn sm" id="presetLoad">Load</button>
-          <button class="btn sm danger" id="presetDel">Delete</button>
-          <span class="sep"></span>
-          <input type="text" id="presetName" maxlength="40" placeholder="Name this search…" style="flex:1 1 200px">
-          <button class="btn sm primary" id="presetSave" title="Saves the settings on this page">Save</button>
-        </div>
-      </div>
-      <div class="panel glass">
+      <div class="panel glass est-panel">
         <div class="est" id="estimate">…</div>
         <div class="examples" id="examples"></div>
       </div>
+      <div class="cat-grid">
+        <button type="button" class="cat-card" data-cat="length"><span class="cat-title">Length</span><span class="cat-sum" id="sum-length"></span></button>
+        <button type="button" class="cat-card" data-cat="chars"><span class="cat-title">Characters</span><span class="cat-sum" id="sum-chars"></span></button>
+        <button type="button" class="cat-card" data-cat="must"><span class="cat-title">Must contain</span><span class="cat-sum" id="sum-must"></span></button>
+        <button type="button" class="cat-card" data-cat="words"><span class="cat-title">Real words</span><span class="cat-sum" id="sum-words"></span></button>
+        <button type="button" class="cat-card" data-cat="builder"><span class="cat-title">Word builder</span><span class="cat-sum" id="sum-builder"></span></button>
+        <button type="button" class="cat-card" data-cat="describe"><span class="cat-title">Describe the names</span><span class="cat-sum" id="sum-describe"></span></button>
+        <button type="button" class="cat-card" data-cat="speed"><span class="cat-title">Speed</span><span class="cat-sum" id="sum-speed"></span></button>
+        <button type="button" class="cat-card" data-cat="stopping"><span class="cat-title">Stopping</span><span class="cat-sum" id="sum-stopping"></span></button>
+        <button type="button" class="cat-card" data-cat="list"><span class="cat-title">Check your own list</span><span class="cat-sum" id="sum-list"></span></button>
+        <button type="button" class="cat-card" data-cat="presets"><span class="cat-title">Presets</span><span class="cat-sum" id="sum-presets"></span></button>
       </div>
-      <div class="search-cols">
-        <div class="scol">
-          <div class="panel glass">
-            <h2>Length</h2>
-            <div class="row">
-              <label class="field"><span>From</span><input type="number" min="2" max="32" data-k="min"></label>
-              <label class="field"><span>To</span><input type="number" min="2" max="32" data-k="max"></label>
-            </div>
-            <div class="field" style="margin-top:14px"><span>Order</span>
-              <div class="chips" data-chips="mode"><button data-v="shortest">Shortest first</button><button data-v="random">Random</button></div></div>
-          </div>
-          <div class="panel glass">
-            <h2>Characters</h2>
-            <div class="tog-grid">
-            <label class="tog"><input type="checkbox" data-k="letters"> Letters a-z</label>
-            <label class="tog"><input type="checkbox" data-k="digits"> Digits 0-9</label>
-            <label class="tog"><input type="checkbox" data-k="underscore"> Underscore _</label>
-            <label class="tog"><input type="checkbox" data-k="period"> Period .</label>
-            </div>
-          </div>
-          <div class="panel glass">
-            <h2>Must contain</h2>
-            <div class="row">
-              <label class="field" style="flex:1 1 90px"><span>Text in every name</span><input type="text" data-k="must" placeholder="e.g. cat"></label>
-              <div class="field" style="flex:0 1 auto"><span>Where</span>
-                <div class="chips" data-chips="place"><button data-v="any">Anywhere</button><button data-v="start">Start</button><button data-v="end">End</button></div></div>
-            </div>
-          </div>
-          <div class="panel glass">
-            <h2>Real words</h2>
-            <label class="field"><span>Dictionary</span><select id="langSel"></select></label>
-            <div class="row" style="margin-top:12px" id="wordsRow">
-              <label class="field"><span>Words per name, from</span><input type="number" min="1" max="8" data-k="wmin"></label>
-              <label class="field"><span>to</span><input type="number" min="1" max="8" data-k="wmax"></label>
-            </div>
-            <div class="msg" id="dictMsg"></div>
-          </div>
+
+      <dialog class="modal glass cat-modal" id="cat-length"><div class="modal-h"><h2>Length</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <div class="row">
+          <label class="field"><span>From</span><input type="number" min="2" max="32" data-k="min"></label>
+          <label class="field"><span>To</span><input type="number" min="2" max="32" data-k="max"></label>
         </div>
-        <div class="scol">
-          <div class="panel glass" id="builderPanel">
-            <h2>Word builder</h2>
-            <label class="tog"><input type="checkbox" data-k="build_on"> Build names from words + prefixes and suffixes</label>
-            <label class="field" style="margin-top:12px"><span>Base words (leave empty to use your word list)</span>
-              <input type="text" data-k="build_bases" maxlength="500" placeholder="e.g. shadow, nova, flux"></label>
-            <div class="row" style="margin-top:10px">
-            <label class="field"><span>Prefixes (go in front)</span>
-              <input type="text" data-k="build_pre" maxlength="500" placeholder="e.g. neo, pro, ultra"></label>
-            <label class="field"><span>Suffixes (go after)</span>
-              <input type="text" data-k="build_suf" maxlength="500" placeholder="e.g. er, ly, ify"></label>
-            </div>
-            <label class="field" style="margin-top:10px"><span>Either side (used as prefix and suffix)</span>
-              <input type="text" data-k="build_aff" maxlength="500" placeholder="e.g. x, z, o"></label>
-            <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="build_plain"> Also check the plain base words</label>
-            <p class="note">e.g. nova &rarr; neonova, novaly, neonovaly - picked at random, a new order every scan.
-              No base words = your Real words / Describe list.</p>
-          </div>
-          <div class="panel glass">
-            <h2>Speed</h2>
-            <div class="row">
-              <label class="field"><span>Delay from (ms)</span><input type="number" step="100" min="200" data-k="dmin" data-scale="1000"></label>
-              <label class="field"><span>to (ms)</span><input type="number" step="100" min="200" data-k="dmax" data-scale="1000"></label>
-            </div>
-            <p class="note">A random delay in this range between checks (1000 ms = 1 s).</p>
-          </div>
+        <div class="field" style="margin-top:14px"><span>Order</span>
+          <div class="chips" data-chips="mode"><button data-v="shortest">Shortest first</button><button data-v="random">Random</button></div></div>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-chars"><div class="modal-h"><h2>Characters</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <div class="tog-grid">
+          <label class="tog"><input type="checkbox" data-k="letters"> Letters a-z</label>
+          <label class="tog"><input type="checkbox" data-k="digits"> Digits 0-9</label>
+          <label class="tog"><input type="checkbox" data-k="underscore"> Underscore _</label>
+          <label class="tog"><input type="checkbox" data-k="period"> Period .</label>
         </div>
-        <div class="scol">
-          <div class="panel glass" id="describePanel">
-            <h2>Describe the names</h2>
-            <div class="row" style="align-items:center;flex-wrap:nowrap">
-              <input type="text" id="descText" data-k="describe" maxlength="300" placeholder="e.g. dark, ocean, fast"
-                aria-label="Words that describe the kind of names you want" style="flex:1 1 auto;min-width:0">
-              <button class="btn primary sm" id="descGo">Find words</button><button class="btn sm" id="descOff">Turn off</button></div>
-            <p class="msg" id="descMsg"></p>
-            <div class="examples" id="descWords"></div>
-            <p class="note">Builds names from related words (<i>ocean</i> &rarr; <i>tide, abyss, marine</i>).
-              Your words are looked up with Datamuse, a free word service.</p>
-          </div>
-          <div class="panel glass">
-            <h2>Stopping</h2>
-            <div class="row" style="align-items:flex-end">
-              <label class="field" style="flex:1 1 90px"><span>Stop after (0 = never)</span><input type="number" min="0" data-k="stop_after"></label>
-              <label class="tog" style="flex:1 1 150px;padding-bottom:8px"><input type="checkbox" data-k="skip_known"> Skip names already checked</label>
-            </div>
-            <div class="field" style="margin-top:12px;margin-bottom:0"><span>Only make names rated (out of 10)</span></div>
-            <div class="row">
-              <label class="field"><span>From</span><select data-k="min_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
-              <label class="field"><span>To</span><select data-k="max_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
-            </div>
-            <p class="note">10 to 10 = only perfect names, 0 to 10 = any. Others are skipped unchecked (pasted lists are always checked).</p>
-            <div class="row" style="align-items:center;margin-top:2px"><span class="note" id="histInfo" style="margin:0"></span>
-              <button class="link" id="forgetHist">Forget</button></div>
-          </div>
-          <div class="panel glass">
-            <h2>Check your own list</h2>
-            <textarea id="nameList" rows="3" placeholder="One name per line (or separated by commas / spaces)"></textarea>
-            <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
-              <span class="note" id="nameCount" style="margin:0">0 names</span>
-              <button class="btn primary sm" id="checkListed">Check these names</button>
-            </div>
-          </div>
+        <p class="note">At least one type must be on. Fewer types make shorter, cleaner names.</p>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-must"><div class="modal-h"><h2>Must contain</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <label class="field"><span>Text in every name</span><input type="text" data-k="must" placeholder="e.g. cat"></label>
+        <div class="field" style="margin-top:12px"><span>Where</span>
+          <div class="chips" data-chips="place"><button data-v="any">Anywhere</button><button data-v="start">Start</button><button data-v="end">End</button></div></div>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-words"><div class="modal-h"><h2>Real words</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <label class="field"><span>Dictionary</span><select id="langSel"></select></label>
+        <div class="row" style="margin-top:12px" id="wordsRow">
+          <label class="field"><span>Words per name, from</span><input type="number" min="1" max="8" data-k="wmin"></label>
+          <label class="field"><span>to</span><input type="number" min="1" max="8" data-k="wmax"></label>
         </div>
-      </div>
+        <div class="msg" id="dictMsg"></div>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-builder"><div class="modal-h"><h2>Word builder</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <label class="tog"><input type="checkbox" data-k="build_on"> Build names from words + prefixes and suffixes</label>
+        <label class="field" style="margin-top:12px"><span>Base words (leave empty to use your word list)</span>
+          <input type="text" data-k="build_bases" maxlength="500" placeholder="e.g. shadow, nova, flux"></label>
+        <div class="row" style="margin-top:10px">
+          <label class="field"><span>Prefixes (go in front)</span>
+            <input type="text" data-k="build_pre" maxlength="500" placeholder="e.g. neo, pro, ultra"></label>
+          <label class="field"><span>Suffixes (go after)</span>
+            <input type="text" data-k="build_suf" maxlength="500" placeholder="e.g. er, ly, ify"></label>
+        </div>
+        <label class="field" style="margin-top:10px"><span>Either side (used as prefix and suffix)</span>
+          <input type="text" data-k="build_aff" maxlength="500" placeholder="e.g. x, z, o"></label>
+        <label class="tog" style="margin-top:10px"><input type="checkbox" data-k="build_plain"> Also check the plain base words</label>
+        <p class="note">e.g. nova &rarr; neonova, novaly, neonovaly - picked at random, a new order every scan.
+          No base words = your Real words / Describe list.</p>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-describe"><div class="modal-h"><h2>Describe the names</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <div class="row" style="align-items:center;flex-wrap:nowrap">
+          <input type="text" id="descText" data-k="describe" maxlength="300" placeholder="e.g. dark, ocean, fast"
+            aria-label="Words that describe the kind of names you want" style="flex:1 1 auto;min-width:0">
+          <button class="btn primary sm" id="descGo">Find words</button><button class="btn sm" id="descOff">Turn off</button></div>
+        <p class="msg" id="descMsg"></p>
+        <div class="examples" id="descWords"></div>
+        <p class="note">Builds names from related words (<i>ocean</i> &rarr; <i>tide, abyss, marine</i>).
+          Your words are looked up with Datamuse, a free word service.</p>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-speed"><div class="modal-h"><h2>Speed</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <div class="row">
+          <label class="field"><span>Delay from (ms)</span><input type="number" step="100" min="200" data-k="dmin" data-scale="1000"></label>
+          <label class="field"><span>to (ms)</span><input type="number" step="100" min="200" data-k="dmax" data-scale="1000"></label>
+        </div>
+        <p class="note">A random delay in this range between checks (1000 ms = 1 s). A longer delay is gentler on your account.</p>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-stopping"><div class="modal-h"><h2>Stopping</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <div class="row" style="align-items:flex-end">
+          <label class="field" style="flex:1 1 90px"><span>Stop after (0 = never)</span><input type="number" min="0" data-k="stop_after"></label>
+          <label class="tog" style="flex:1 1 150px;padding-bottom:8px"><input type="checkbox" data-k="skip_known"> Skip names already checked</label>
+        </div>
+        <div class="field" style="margin-top:12px;margin-bottom:0"><span>Only make names rated (out of 10)</span></div>
+        <div class="row">
+          <label class="field"><span>From</span><select data-k="min_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+          <label class="field"><span>To</span><select data-k="max_rating"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+        </div>
+        <p class="note">10 to 10 = only perfect names, 0 to 10 = any. Others are skipped unchecked (pasted lists are always checked).</p>
+        <div class="row" style="align-items:center;margin-top:2px"><span class="note" id="histInfo" style="margin:0"></span>
+          <button class="link" id="forgetHist">Forget</button></div>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-list"><div class="modal-h"><h2>Check your own list</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <textarea id="nameList" rows="5" placeholder="One name per line (or separated by commas / spaces)"></textarea>
+        <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
+          <span class="note" id="nameCount" style="margin:0">0 names</span>
+          <button class="btn primary sm" id="checkListed">Check these names</button>
+        </div>
+      </dialog>
+
+      <dialog class="modal glass cat-modal" id="cat-presets"><div class="modal-h"><h2>Presets</h2><button class="x" data-close aria-label="Close">&times;</button></div>
+        <label class="field"><span>Saved searches</span><select id="presetSel"></select></label>
+        <div class="btns" style="margin-top:10px"><button class="btn sm" id="presetLoad">Load</button><button class="btn sm danger" id="presetDel">Delete</button></div>
+        <label class="field" style="margin-top:14px"><span>Save the current settings as</span>
+          <div class="row" style="flex-wrap:nowrap;margin-top:4px"><input type="text" id="presetName" maxlength="40" placeholder="Name this search…" style="flex:1 1 auto;min-width:0">
+            <button class="btn sm primary" id="presetSave">Save</button></div></label>
+        <p class="note">Presets remember only the settings on this page.</p>
+      </dialog>
     </section>
 
     <!-- ACCOUNTS -->
@@ -1075,6 +1083,7 @@ function fitLists(){
 }
 addEventListener("resize", fitLists);
 function show(tab){
+  document.querySelectorAll(".cat-modal[open]").forEach(d => d.close());
   if (!$(`.page[data-page="${tab}"]`)) tab = "home";
   $$(".page").forEach(p => p.classList.toggle("on", p.dataset.page === tab));
   $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
@@ -1101,11 +1110,40 @@ function fillSettings(){
   $$("[data-chips]").forEach(c => c.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[c.dataset.chips])));
   applyTheme();
   testBadge();
+  updateCards();
+}
+function updateCards(){
+  if (typeof S !== "object" || !S) return;
+  const set = (id, text, active) => {
+    const el = document.getElementById("sum-" + id); if (!el) return;
+    el.textContent = text; el.closest(".cat-card").classList.toggle("active", !!active);
+  };
+  set("length", `${S.min}\u2013${S.max} \u00b7 ${S.mode === "random" ? "random order" : "shortest first"}`, true);
+  const chars = [S.letters && "a-z", S.digits && "0-9", S.underscore && "_", S.period && "."].filter(Boolean);
+  set("chars", chars.length ? chars.join(", ") : "none chosen", chars.length > 0);
+  set("must", (S.must || "").trim() ? `\u201c${S.must}\u201d \u00b7 ${S.place}` : "any text", !!(S.must || "").trim());
+  const dictName = S.dict_lang === "file" ? "custom list" : ((CFG && CFG.dict_label) || "on");
+  set("words", S.dict_lang ? `${dictName} \u00b7 ${S.wmin}\u2013${S.wmax}/name` : "off", !!S.dict_lang);
+  set("builder", S.build_on ? "on" : "off", !!S.build_on);
+  set("describe", (S.describe || "").trim() ? `\u201c${S.describe}\u201d` : "off", !!(S.describe || "").trim());
+  set("speed", `${Math.round(S.dmin * 1000)}\u2013${Math.round(S.dmax * 1000)} ms`, true);
+  const lo = +S.min_rating || 0, hi = S.max_rating === undefined ? 10 : +S.max_rating;
+  const stop = [];
+  if (!(lo === 0 && hi === 10)) stop.push(`rated ${lo}\u2013${hi}`);
+  if (+S.stop_after > 0) stop.push(`stop at ${fmtN(+S.stop_after)}`);
+  if (S.skip_known) stop.push("skip checked");
+  set("stopping", stop.length ? stop.join(" \u00b7 ") : "no limits", stop.some(x => !x.startsWith("skip")));
+  const nl = document.getElementById("nameList");
+  const n = nl ? nl.value.split(/[\s,;]+/).filter(Boolean).length : 0;
+  set("list", n ? `${fmtN(n)} name(s) pasted` : "check exactly these names", n > 0);
+  const np = (CFG && CFG.presets) ? CFG.presets.length : 0;
+  set("presets", np ? `${np} saved` : "none saved", false);
 }
 function testBadge(){ const b = $("#testBadge"); if (b) b.hidden = !(S && S.test_mode); try { testKey = ""; renderTest(); } catch (e) {} }   // shows while test mode is on
 let saveT = null, pending = {};
 function setSetting(k, v, now){
   S[k] = v; pending[k] = v;
+  updateCards();
   clearTimeout(saveT);
   saveT = setTimeout(flush, now ? 0 : 350);
 }
@@ -1171,6 +1209,7 @@ function saveUI(){
 // ---------- estimate
 let estT = null;
 function estimate(){
+  updateCards();
   clearTimeout(estT);
   estT = setTimeout(async () => {
     const r = await api("/api/estimate", {});
@@ -1197,6 +1236,7 @@ async function loadConfig(){
   if (CFG.presets.includes(keep)) ps.value = keep;
   ps.disabled = $("#presetLoad").disabled = $("#presetDel").disabled = !CFG.presets.length;
   FAVS = new Set(CFG.favourites || []);
+  updateCards();
 }
 let acctShowFailed = false;   // Accounts tab: show only the tokens that failed
 function renderSecrets(sec){
@@ -1512,11 +1552,17 @@ function wire(){
   // dictionary
   $("#langSel").onchange = async e => { e.target.blur(); if (e.target.value === "file") return; await act("/api/dict/use", {code: e.target.value}); refreshDict(); };
   // check a list
-  const countNames = () => { const n = $("#nameList").value.split(/[\s,;]+/).filter(Boolean).length; $("#nameCount").textContent = `${fmtN(n)} name(s)`; };
+  const countNames = () => { const n = $("#nameList").value.split(/[\s,;]+/).filter(Boolean).length; $("#nameCount").textContent = `${fmtN(n)} name(s)`; updateCards(); };
   $("#nameList").oninput = countNames;
   // footer shortcuts that also focus a field
   document.addEventListener("click", e => { const a = e.target.closest("[data-jump]"); if (a) setTimeout(() => { const f = $("#" + a.dataset.jump); f.scrollIntoView({block: "center"}); f.focus(); }, 60); });
-  $("#checkListed").onclick = async () => { await flush(); const r = await act("/api/start", {names: $("#nameList").value}); if (r.ok) { show("home"); toast(`Checking ${fmtN(r.total)} names`); } };
+  $("#checkListed").onclick = async () => { await flush(); const r = await act("/api/start", {names: $("#nameList").value}); if (r.ok) { $("#cat-list").close(); show("home"); toast(`Checking ${fmtN(r.total)} names`); } };
+  $$(".cat-card").forEach(c => c.onclick = () => { const d = document.getElementById("cat-" + c.dataset.cat); if (d) d.showModal(); });
+  $$(".cat-modal").forEach(d => {
+    d.querySelector("[data-close]").onclick = () => d.close();
+    d.addEventListener("click", e => { if (e.target === d) d.close(); });   // click the backdrop to close
+    d.addEventListener("close", updateCards);
+  });
   // webhook
   $("#hookSave").onclick = () => act("/api/webhook", {url: $("#hookUrl").value}, "Webhook saved");
   $("#hookTest").onclick = async () => { await flush(); await api("/api/webhook", {url: $("#hookUrl").value}); setMsg($("#hookMsg"), "Sending…", "info");
