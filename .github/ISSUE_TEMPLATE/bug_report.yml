@@ -1,0 +1,39 @@
+name: Report a bug
+description: Something in Pro Tool doesn't work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste your token or webhook URL here** - this page is public.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: I pressed Start scan with... and then...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Pro Tool version
+      description: Shown in Settings (the gear icon) -> Updates.
+      placeholder: v2.1.4
+    validations:
+      required: true
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows version
+      options:
+        - Windows 11
+        - Windows 10
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Errors or screenshots (optional)
+      description: Anything from the Errors page, or a screenshot. Hide tokens and personal info first.

@@ -1,0 +1,16 @@
+name: Suggest a feature
+description: An idea to make Pro Tool better
+labels: [idea]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's your idea?
+      placeholder: It would be great if Pro Tool could...
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help?
+      description: What would you use it for?

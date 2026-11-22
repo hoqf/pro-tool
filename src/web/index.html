@@ -1771,7 +1771,7 @@ function roll(el, n){
   cancelAnimationFrame(el._raf);
   const step = now => {
     const k = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k, 3);
-    el._v = Math.round(from + (n - from) * e); el.textContent = fmtN(el._v);
+    el._v = Math.max(0, Math.round(from + (n - from) * e)) || 0; el.textContent = fmtN(el._v);   // never "-0"
     if (k < 1) el._raf = requestAnimationFrame(step);
   };
   el._raf = requestAnimationFrame(step);

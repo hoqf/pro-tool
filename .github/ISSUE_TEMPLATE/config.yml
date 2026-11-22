@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Download the latest version
+    url: https://github.com/hoqf/pro-tool/releases/latest
+    about: Many problems are already fixed in the newest version.
+  - name: Read the FAQ
+    url: https://github.com/hoqf/pro-tool#faq
+    about: SmartScreen warnings, tokens, where your data is stored, updates and more.

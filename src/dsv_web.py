@@ -38,19 +38,21 @@ import requests
 import dsv_gui as core   # name generator, pacer, webhook payloads, DPAPI helpers
 
 HERE = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__))
+# your data (the dist folder) lives next to the exe - or, running the code, in the project folder above src/
+ROOT = os.path.dirname(HERE) if not getattr(sys, "frozen", False) and os.path.basename(HERE) == "src" else HERE
 
 # ------------------------------------------------------------------ updates
 # release.py sets these. Updates are signed: the app only installs an update whose signature matches
 # UPDATE_PUBKEY, so nobody but the holder of the private signing key can push one.
 APP_VERSION = "2.1.3"
-UPDATE_REPO = "hoqf/pro-tool-updates"
+UPDATE_REPO = "hoqf/pro-tool"
 UPDATE_PUBKEY = "UIyHAE1nXAPFRJCc8ZkIEe3WjiwJoxXZoIqKpOpk8Ww="
 UPDATE_ASSET = "ProToolV2.exe"
 WEB_DIR = os.path.join(getattr(sys, "_MEIPASS", HERE), "web")
 
 # ------------------------------------------------------------------ data files
 # Use the same folder as DSV_GUI.exe (dist/) when it exists, so both apps share data.
-DATA_DIR = HERE
+DATA_DIR = ROOT
 SETTINGS_FILE = RESULTS_FILE = CHECKED_FILE = DICT_DIR = ""
 
 
@@ -2078,35 +2080,6 @@ def token_notification(notifier):
     return hook
 
 
-def run_see_through_window(url):
-    """The app window, see-through version (WebView2 composition control in a transparent WPF window; see
-    wpf_window.py). Blocks until it closes. Returns False if it couldn't start, so the caller can fall back."""
-    if not core.IS_WINDOWS:
-        return False
-    try:
-        import webview
-        import wpf_window
-    except Exception as e:
-        print(f"See-through window unavailable: {e}")
-        return False
-    webview_lib = os.path.join(os.path.dirname(webview.__file__), "lib")
-    wpf_dll = os.path.join(getattr(sys, "_MEIPASS", HERE), "lib", "Microsoft.Web.WebView2.Wpf.dll")
-    icon = os.path.join(WEB_DIR, "icons", "app.ico")
-
-    def make_tray(on_open, on_quit):              # the tray icon + Windows notifications for found usernames
-        tray = TrayIcon(icon, on_open=on_open, on_quit=on_quit)
-        if not tray.ok:
-            return None
-        FOUND_HOOKS.append(found_notification(tray.notifier))
-        TOKEN_HOOKS.append(token_notification(tray.notifier))
-        return tray
-
-    ok, why = wpf_window.run_window(url + "?app=1", "Pro Tool", icon, DATA_DIR, webview_lib, wpf_dll, make_tray)
-    if not ok:
-        print(f"See-through window didn't start ({why}); using the standard window.")
-    return ok
-
-
 def run_app_window(url):
     """Borderless pywebview window with the page drawing its own title bar. Blocks until the window
     closes. Returns False if pywebview isn't available (the caller then falls back to Edge)."""
@@ -2207,8 +2180,8 @@ def main():
     frozen = getattr(sys, "frozen", False)
     if frozen and sys.stdout is None:          # windowed .exe: keep a log instead of a console
         try:
-            os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
-            sys.stdout = sys.stderr = open(os.path.join(HERE, "dist", "pro-tool.log"), "a", encoding="utf-8", buffering=1)
+            os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
+            sys.stdout = sys.stderr = open(os.path.join(ROOT, "dist", "pro-tool.log"), "a", encoding="utf-8", buffering=1)
         except OSError:
             pass
     ap = argparse.ArgumentParser(description="Pro Tool - username scanner in your browser")
@@ -2223,8 +2196,8 @@ def main():
     app_mode = (a.app or frozen) and not a.lan and not a.headless
     cleanup_old_exe()
 
-    dist = os.path.join(HERE, "dist")
-    set_data_dir(a.data or (dist if os.path.isdir(dist) else HERE))
+    dist = os.path.join(ROOT, "dist")
+    set_data_dir(a.data or (dist if os.path.isdir(dist) else ROOT))
     SECRETS = Secrets()
 
     host = "0.0.0.0" if a.lan else "127.0.0.1"

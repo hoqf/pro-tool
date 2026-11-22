@@ -1,7 +1,8 @@
 """Publish a Pro Tool update.
 
     python release.py --make-key                 (once) create your private signing key
-    python release.py 2.2.0 "What changed"       build, sign and publish version 2.2.0
+    python release.py 2.2.0 "What changed"       build, sign and publish version 2.2.0 (and add it to CHANGELOG.md)
+    python release.py 2.2.0                      same, using the v2.2.0 entry you already wrote in CHANGELOG.md
     python release.py 2.2.0 "What changed" --dry-run    everything except uploading
 
 Everyone running a copy with the update system gets an "Update now / Later" prompt the next time they
@@ -12,10 +13,48 @@ updates (people would have to download a new copy by hand). Never share it.
 import argparse, base64, hashlib, json, os, re, shutil, subprocess, sys, tempfile, zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-APP = os.path.join(HERE, "dsv_web.py")
+SRC = os.path.join(HERE, "src")
+APP = os.path.join(SRC, "dsv_web.py")
 KEY_DIR = os.path.join(os.path.expanduser("~"), ".protool-release")
 KEY_FILE = os.path.join(KEY_DIR, "signing_key.pem")
 SHARE_ZIP = os.path.join(os.path.expanduser("~"), "OneDrive", "Desktop", "Pro Tool v2.zip")
+CHANGELOG = os.path.join(HERE, "CHANGELOG.md")
+
+
+def changelog_notes(version):
+    """This version's entry in CHANGELOG.md, if you wrote one."""
+    try:
+        text = open(CHANGELOG, encoding="utf-8").read()
+    except OSError:
+        return ""
+    m = re.search(r"^## v" + re.escape(version) + r"\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    return m.group(1).strip() if m else ""
+
+
+def add_to_changelog(version, notes):
+    """Put this version at the top of CHANGELOG.md (skipped if it's already there)."""
+    if changelog_notes(version):
+        return
+    import datetime
+    lines = [l.strip() for l in notes.splitlines() if l.strip()] or [f"Pro Tool v{version}"]
+    entry = f"## v{version} - {datetime.date.today():%Y-%m-%d}\n"
+    entry += "".join((l if l.startswith("- ") else "- " + l) + "\n" for l in lines) + "\n"
+    try:
+        text = open(CHANGELOG, encoding="utf-8").read()
+    except OSError:
+        text = "# Changelog\n\n"
+    i = text.find("\n## ")
+    text = text[:i + 1] + entry + text[i + 1:] if i >= 0 else text.rstrip() + "\n\n" + entry
+    open(CHANGELOG, "w", encoding="utf-8").write(text)
+
+
+def save_to_github(version):
+    """Commit the new version number and changelog, and push them."""
+    for cmd in (["git", "add", "src/dsv_web.py", "CHANGELOG.md"], ["git", "commit", "-q", "-m", f"Version {version}"],
+                ["git", "push", "-q", "origin", "main"]):
+        if subprocess.run(cmd, cwd=HERE).returncode != 0:
+            print("Couldn't save the version change to GitHub automatically - commit and push it yourself.")
+            return
 
 
 def app_text():
@@ -76,15 +115,14 @@ def build(out_dir):
     wv = os.path.join(work, "webview")
     shutil.copytree(os.path.dirname(webview.__file__), wv, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     cmd = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--onefile", "--windowed", "--name", "Pro Tool v2",
-           "--icon", os.path.join(HERE, "web", "icons", "app.ico"),
-           "--add-data", f"{os.path.join(HERE, 'web')};web",
-           "--add-data", f"{os.path.join(HERE, 'lib', 'Microsoft.Web.WebView2.Wpf.dll')};lib",
+           "--icon", os.path.join(SRC, "web", "icons", "app.ico"),
+           "--add-data", f"{os.path.join(SRC, 'web')};web",
            "--add-data", f"{wv};webview", "--collect-all", "webview", "--copy-metadata", "pywebview",
-           "--hidden-import", "PIL.ImageGrab", "--hidden-import", "wpf_window",
+           "--hidden-import", "PIL.ImageGrab",
            "--hidden-import", "cryptography.hazmat.primitives.asymmetric.ed25519",
            "--distpath", out_dir, "--workpath", os.path.join(work, "work"), "--specpath", os.path.join(work, "spec"), APP]
     print("Building the exe (about a minute)...")
-    r = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True)
+    r = subprocess.run(cmd, cwd=SRC, capture_output=True, text=True)
     shutil.rmtree(work, ignore_errors=True)
     exe = os.path.join(out_dir, "Pro Tool v2.exe")
     if r.returncode != 0 or not os.path.isfile(exe):
@@ -159,7 +197,12 @@ def main():
         raise
     up = os.path.join(out, asset)
     shutil.copyfile(exe, up)
-    manifest = sign(up, a.version, a.notes, repo, asset)
+    leak = private_strings(up)                                       # checked before anything is copied anywhere
+    if leak:
+        set_app_const("APP_VERSION", current)
+        sys.exit(f"Stopped: the build contains {', '.join(leak)} (personal info). Nothing was published or replaced.")
+    notes = a.notes or changelog_notes(a.version)
+    manifest = sign(up, a.version, notes, repo, asset)
     mf = os.path.join(out, "latest.json")
     with open(mf, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
@@ -178,16 +221,17 @@ def main():
             if readme:
                 z.writestr("Pro Tool v2/README.txt", readme)
         os.replace(SHARE_ZIP + ".new", SHARE_ZIP)
-    leak = private_strings(up)
-    if leak:
-        set_app_const("APP_VERSION", current)
-        sys.exit(f"Stopped: the build contains {', '.join(leak)} (personal info). Nothing was published.")
     print(f"Built and signed v{a.version}: {up}")
     print(f"Publishing to github.com/{repo} ...")
     r = subprocess.run([gh(), "release", "create", f"v{a.version}", up, mf, "--repo", repo,
-                        "--title", f"Pro Tool v{a.version}", "--notes", a.notes or f"Pro Tool v{a.version}"])
+                        "--title", f"Pro Tool v{a.version}", "--notes",
+                        (notes or f"Pro Tool v{a.version}")
+                        + f"\n\n**Download:** `{asset}` below - or just open Pro Tool and choose **Update now**."
+                        + f"\n\n[Full changelog](https://github.com/{repo}/blob/main/CHANGELOG.md)"])
     if r.returncode != 0:
         sys.exit("Upload failed (see above). The build is still in " + out)
+    add_to_changelog(a.version, notes)
+    save_to_github(a.version)
     print(f"Published v{a.version}. Every copy will offer the update the next time it opens.")
 
 
