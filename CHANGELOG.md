@@ -2,6 +2,9 @@
 
 Every version of Pro Tool. The app offers new versions automatically (**Update now / Later**).
 
+## v2.1.5 - 2026-11-21
+- Live scoreboard: turn on 'Keep a live scoreboard message' on the Webhook page and one message in your channel updates itself during a scan.
+
 ## v2.1.4 - 2026-11-21
 - The project now lives at github.com/hoqf/pro-tool (older copies are redirected automatically).
 - Fixed the counters briefly showing "-0" when a scan starts.
