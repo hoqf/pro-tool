@@ -1,4 +1,4 @@
-xs <div align="center">
+<div align="center">
 
 <img src="src/web/icons/icon-192.png" width="96" alt="Pro Tool icon">
 
