@@ -574,6 +574,7 @@ textarea{min-height:64px}
 .tog-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
 .presets .row{flex-wrap:nowrap} .presets .row .sep{display:none}
 @media (max-width:1180px){.presets .row{flex-wrap:wrap}}
+#acctShowFailed.on{border-color:var(--blue);background:var(--accent-soft)}
 .res-sort{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)} .res-sort select{width:auto;padding:6px 10px}
 </style>
 </head>
@@ -872,6 +873,8 @@ textarea{min-height:64px}
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
           <h2 style="margin:0">Saved accounts</h2>
           <div class="btns">
+            <button class="btn sm" id="acctShowFailed" hidden>Show only failed</button>
+            <button class="btn sm danger" id="acctRemoveFailed" hidden>Remove failed</button>
             <button class="btn sm" id="acctTestAll">Test all</button>
             <label class="btn sm">Import .txt…<input type="file" id="acctFile" accept=".txt,.lst,.csv" hidden></label>
           </div>
@@ -1195,15 +1198,22 @@ async function loadConfig(){
   ps.disabled = $("#presetLoad").disabled = $("#presetDel").disabled = !CFG.presets.length;
   FAVS = new Set(CFG.favourites || []);
 }
+let acctShowFailed = false;   // Accounts tab: show only the tokens that failed
 function renderSecrets(sec){
   CFG.secrets = sec;
+  const anyBad = sec.accounts.some(a => a.bad);
+  if (!anyBad) acctShowFailed = false;                 // nothing failed: drop the filter
+  const sf = $("#acctShowFailed"), rf = $("#acctRemoveFailed");
+  if (sf) { sf.hidden = !anyBad; sf.textContent = acctShowFailed ? "Show all" : "Show only failed"; sf.classList.toggle("on", acctShowFailed); }
+  if (rf) rf.hidden = !anyBad;
   $("#tokState").innerHTML = sec.token_set ? `Current token ends in <code>…${esc(sec.token_tail)}</code>`
     + (sec.token_bad ? ` <span class="tokwarn">&#9888; not working: ${esc(sec.token_bad)}</span>` : "") : "<span style='color:var(--warn)'>No token set yet.</span>";
   const nBad = sec.accounts.filter(a => a.bad).length + (sec.token_bad && sec.active < 0 ? 1 : 0), nb = $("#navTokCnt");
   if (nb) { nb.textContent = nBad; nb.hidden = !nBad; }   // yellow count in the menu
   if (document.activeElement !== $("#hookUrl")) $("#hookUrl").value = sec.hook || "";
   const box = $("#accts");
-  box.innerHTML = sec.accounts.length ? sec.accounts.map((a,i) => `
+  const shown = sec.accounts.map((a, i) => [a, i]).filter(([a]) => !acctShowFailed || a.bad);
+  box.innerHTML = shown.length ? shown.map(([a,i]) => `
     <div class="acct ${i===sec.active?"on":""} ${a.bad?"tokbad":""}">
       <div class="who"><b>${a.bad ? "&#9888; " : ""}${esc(a.label)}</b><small>${a.bad ? `<span class="tokwhy">not working: ${esc(a.why || "rejected")}</span>` : esc(a.name || "not tested")} &middot; …${esc(a.tail)}</small></div>
       <div class="btns">
@@ -1211,7 +1221,7 @@ function renderSecrets(sec){
         <button class="btn sm" data-a="test" data-i="${i}">Test</button>
         <button class="btn sm danger" data-a="remove" data-i="${i}">Remove</button>
       </div>
-    </div>`).join("") : '<div class="empty">No saved accounts yet. Paste a token above, give it a label and press Save to list.</div>';
+    </div>`).join("") : `<div class="empty">${acctShowFailed ? "No failed accounts." : "No saved accounts yet. Paste a token above, give it a label and press Save to list."}</div>`;
   const sel = $("#acctSel");
   if (document.activeElement !== sel) {
     let opts = sec.accounts.map((a, i) => `<option value="${i}" ${i === sec.active ? "selected" : ""}>${a.bad ? "&#9888; " : ""}${esc(a.label)}${a.bad ? " (not working)" : a.name ? " - " + esc(a.name) : ""}</option>`).join("");
@@ -1527,6 +1537,12 @@ function wire(){
   help.addEventListener("click", e => { if (e.target === help) help.close(); });   // click outside to close
   $("#acctTestAll").onclick = async () => { const b = $("#acctTestAll"); b.disabled = true; b.textContent = "Testing…";
     const r = await act("/api/accounts/test_all"); b.disabled = false; b.textContent = "Test all"; if (r.secrets) renderSecrets(r.secrets); };
+  $("#acctShowFailed").onclick = () => { acctShowFailed = !acctShowFailed; renderSecrets(CFG.secrets); };
+  $("#acctRemoveFailed").onclick = async () => {
+    const n = CFG.secrets.accounts.filter(a => a.bad).length;
+    if (!n || !confirm(`Remove ${n} failed account${n>1?"s":""} from the list? This can't be undone.`)) return;
+    const r = await act("/api/accounts/remove_bad"); if (r.secrets) renderSecrets(r.secrets);
+  };
   $("#acctFile").onchange = async e => { const f = e.target.files[0]; if (!f) return;
     const r = await act("/api/accounts/import", {text: await readFile(f)}); if (r.secrets) renderSecrets(r.secrets); e.target.value = ""; };
   // results

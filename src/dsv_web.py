@@ -1445,6 +1445,14 @@ def handle_post(path, body):
             return dict(res, secrets=SECRETS.public())
         SECRETS.save()
         return {"ok": True, "msg": msg, "secrets": SECRETS.public()}
+    if path == "/api/accounts/remove_bad":
+        before = len(SECRETS.accounts)
+        SECRETS.accounts = [a for a in SECRETS.accounts if not a["bad"]]
+        removed = before - len(SECRETS.accounts)
+        if removed:
+            SECRETS.save()
+        return {"ok": True, "secrets": SECRETS.public(),
+                "msg": f"Removed {removed} failed account(s)" if removed else "No failed accounts to remove"}
     if path == "/api/accounts/import":
         known, added = {a["token"] for a in SECRETS.accounts}, 0
         for line in str(body.get("text", "")).splitlines():
