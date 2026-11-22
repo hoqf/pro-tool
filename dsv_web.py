@@ -582,7 +582,8 @@ UPDATE = {"checked": 0, "info": None, "busy": False, "error": ""}
 
 def check_for_update():
     """Ask the release page for the newest version. Returns {"available", "version", "notes"}."""
-    r = requests.get(update_manifest_url(), timeout=12)
+    r = requests.get(update_manifest_url(), params={"t": int(time.time())}, timeout=12,   # always the newest,
+                     headers={"Cache-Control": "no-cache"})                               # not a cached copy
     if r.status_code == 404:
         return {"available": False, "version": APP_VERSION, "notes": ""}      # nothing published yet
     r.raise_for_status()
